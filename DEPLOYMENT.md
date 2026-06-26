@@ -12,14 +12,23 @@
 git clone https://github.com/habrok-21/TriGuard.git
 cd TriGuard
 
-# 2. Configure environment
+# 2. Replace all CHANGE_ME values (see checklist below), then:
+# 3. Start the stack
+docker compose up -d
+
+# 4. Open the app
+open http://localhost:8443
 ```
 
-All `CHANGE_ME` values in the project must be replaced with your own configuration. Here is every location:
-
----
+**Default login:** Username: `admin`, Password: `CHANGE_ME` (change before production)
 
 ## Configuration Checklist
+
+All `CHANGE_ME` values must be replaced before running. Use this to find every one:
+
+```bash
+make check-config
+```
 
 ### 1. `docker-compose.yml`
 
@@ -96,3 +105,44 @@ SMTP_PASSWORD=your-app-password
 SMTP_FROM=your-email@gmail.com
 ADMIN_EMAIL=admin@example.com
 ```
+
+## Default Users
+
+| Username | Role | Access |
+|----------|------|--------|
+| `admin` | admin | Full access (MFA required) |
+| `jay` | IT Security | 5 resources |
+| `luffy` | IT Security | 2 resources |
+| `zoro` | Operations | 2 resources |
+| `ace` | Finance | 3 resources |
+
+Passwords for all seed users are set in `ldap/seed.ldif` (default: `CHANGE_ME`).
+
+## Useful Commands
+
+| Command | What it does |
+|---------|-------------|
+| `make up` | Start all services |
+| `make down` | Stop all services |
+| `make logs` | View gateway logs |
+| `make db` | List users in the database |
+| `make lock` | Lock DB for production safety |
+| `make check-config` | Find remaining `CHANGE_ME` placeholders |
+| `make cli` | Run user management CLI (reset MFA, change passwords) |
+
+## Ports
+
+| Port | Service |
+|------|---------|
+| `8443` | Gateway (FastAPI app) |
+| `389` | OpenLDAP |
+| `636` | LDAPS |
+| `51820` | WireGuard VPN |
+| `8001` | Example accounting API |
+
+## Troubleshooting
+
+- **"No database found"** — Normal on first run. The DB is created automatically when the gateway starts.
+- **Login fails** — Make sure LDAP is healthy (`docker compose ps`). Check logs with `make logs`.
+- **Emails not sending** — Verify SMTP credentials. Gmail users need an [App Password](https://support.google.com/accounts/answer/185833).
+- **WireGuard not connecting** — Ensure port `51820/udp` is open on your firewall.
