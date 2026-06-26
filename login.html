@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zero Trust IAM Gateway</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+body{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);
+  position:relative;overflow:hidden
+}
+body::before{
+  content:'';position:absolute;width:600px;height:600px;
+  background:radial-gradient(circle,rgba(99,102,241,.15),transparent 70%);
+  top:-200px;left:-200px;animation:drift 8s ease-in-out infinite alternate
+}
+body::after{
+  content:'';position:absolute;width:500px;height:500px;
+  background:radial-gradient(circle,rgba(168,85,247,.12),transparent 70%);
+  bottom:-150px;right:-150px;animation:drift 10s ease-in-out infinite alternate-reverse
+}
+@keyframes drift{0%{transform:translate(0,0)}100%{transform:translate(80px,60px)}}
+.login-card{
+  position:relative;z-index:1;
+  background:rgba(255,255,255,.06);backdrop-filter:blur(24px);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:24px;padding:48px 40px 40px;width:400px;
+  box-shadow:0 25px 50px -12px rgba(0,0,0,.5);
+  animation:fadeUp .6s ease-out
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.login-card .logo{text-align:center;margin-bottom:32px}
+.login-card .logo i{font-size:40px;color:#818cf8;background:rgba(99,102,241,.15);padding:18px;border-radius:16px;margin-bottom:12px}
+.login-card .logo h1{font-size:20px;font-weight:600;color:#e2e8f0;letter-spacing:-.3px}
+.login-card .logo p{font-size:13px;color:#94a3b8;margin-top:4px}
+.form-group{position:relative;margin-bottom:20px}
+.form-group i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:#64748b;font-size:16px;transition:color .3s}
+.form-group input{
+  width:100%;padding:14px 16px 14px 46px;
+  background:rgba(15,23,42,.5);border:1px solid rgba(148,163,184,.15);
+  border-radius:12px;color:#e2e8f0;font-size:15px;
+  outline:none;transition:all .3s
+}
+.form-group input:focus{border-color:#818cf8;background:rgba(15,23,42,.7);box-shadow:0 0 0 3px rgba(99,102,241,.15)}
+.form-group input:focus+i{color:#818cf8}
+.form-group input::placeholder{color:#475569}
+.form-options{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;font-size:13px}
+.form-options label{color:#94a3b8;display:flex;align-items:center;gap:8px;cursor:pointer}
+.form-options label input[type=checkbox]{accent-color:#818cf8;width:16px;height:16px}
+.form-options a{color:#818cf8;text-decoration:none;font-weight:500}
+.form-options a:hover{text-decoration:underline}
+.btn-login{
+  width:100%;padding:14px;border:none;border-radius:12px;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  color:#fff;font-size:15px;font-weight:600;cursor:pointer;
+  transition:all .3s;display:flex;align-items:center;justify-content:center;gap:10px
+}
+.btn-login:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(99,102,241,.35)}
+.btn-login:active{transform:translateY(0)}
+.btn-login:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-soft{
+  padding:10px 20px;border:none;border-radius:10px;font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px;
+  background:rgba(99,102,241,.12);color:#a5b4fc
+}
+.btn-soft:hover{background:rgba(99,102,241,.2)}
+.error-msg{
+  background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);
+  color:#fca5a5;padding:10px 14px;border-radius:10px;font-size:13px;
+  text-align:center;margin-bottom:16px;display:none
+}
+.error-msg i{margin-right:6px}
+.spinner{display:none;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.footer-text{text-align:center;margin-top:20px;font-size:12px;color:#475569}
+.footer-text span{color:#64748b}
+.step-indicator{display:flex;gap:8px;justify-content:center;margin-bottom:24px}
+.step-dot{width:10px;height:10px;border-radius:50%;background:rgba(148,163,184,.2);transition:all .3s}
+.step-dot.active{background:#818cf8;box-shadow:0 0 8px rgba(99,102,241,.4)}
+.step-dot.done{background:#22c55e}
+.auth-step{display:none}
+.auth-step.active{display:block;animation:fadeUp .35s ease-out}
+.mfa-info{text-align:center;margin-bottom:16px;font-size:13px;color:#94a3b8}
+.mfa-info i{font-size:24px;color:#f59e0b;margin-bottom:8px}
+.mfa-token{text-align:center;letter-spacing:6px;font-size:22px;padding:14px}
+</style>
+</head>
+<body>
+<div class="login-card">
+  <div class="logo">
+    <i class="fa-solid fa-shield-halved"></i>
+    <h1>Gateway Access</h1>
+    <p>Zero Trust IAM Portal</p>
+  </div>
+  <div class="step-indicator">
+    <div class="step-dot active" id="step1"></div>
+    <div class="step-dot" id="step2"></div>
+  </div>
+  <div class="error-msg" id="errorMsg"><i class="fa-solid fa-circle-exclamation"></i> <span id="errorText"></span></div>
+
+  <!-- Step 1: Credentials -->
+  <div class="auth-step active" id="step-credentials">
+    <form id="loginForm" autocomplete="on">
+      <div class="form-group">
+        <i class="fa-solid fa-user"></i>
+        <input type="text" id="username" placeholder="Username" autocomplete="username" required>
+      </div>
+      <div class="form-group">
+        <i class="fa-solid fa-lock"></i>
+        <input type="password" id="password" placeholder="Password" autocomplete="current-password" required>
+      </div>
+      <div class="form-options">
+        <label><input type="checkbox" id="rememberUser" checked> Remember username</label>
+      </div>
+      <button type="submit" class="btn-login" id="loginBtn">
+        <span id="btnText">Sign In</span>
+        <div class="spinner" id="spinner"></div>
+      </button>
+    </form>
+  </div>
+
+  <!-- Step 2: MFA -->
+  <div class="auth-step" id="step-mfa">
+    <div class="mfa-info">
+      <i class="fa-solid fa-shield-halved"></i>
+      <p>Enter the 6-digit code from your authenticator app</p>
+      <div id="mfaProvisionInfo" style="display:none;margin-top:8px;background:rgba(99,102,241,.1);border-radius:10px;padding:12px;text-align:left">
+        <p style="font-size:12px;color:#94a3b8;margin-bottom:6px">Scan this secret in your authenticator app (e.g. Google Authenticator, Authy):</p>
+        <div style="font-family:monospace;font-size:14px;letter-spacing:2px;color:#a5b4fc;background:rgba(0,0,0,.3);padding:10px;border-radius:8px;user-select:all;word-break:break-all" id="mfaProvSecret"></div>
+        <a id="provisioningUri" style="display:inline-block;margin-top:6px;font-size:11px;color:#818cf8" target="_blank">Open in authenticator app</a>
+        <p style="font-size:11px;color:#475569;margin-top:4px">After adding, enter the 6-digit code below</p>
+        <div id="backupCodesDisplay" style="display:none;margin-top:10px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px">
+          <p style="font-size:12px;color:#fbbf24;font-weight:600">&#9888; Backup Recovery Codes</p>
+          <p style="font-size:11px;color:#94a3b8;margin-bottom:6px">Save these 8-digit codes somewhere safe. Each can be used once if you lose access to your authenticator app.</p>
+          <div id="backupCodesList" style="font-family:monospace;font-size:13px;color:#a5b4fc;background:rgba(0,0,0,.3);padding:8px;border-radius:8px;line-height:1.8"></div>
+        </div>
+      </div>
+    </div>
+    <div class="form-group" id="totpInputGroup">
+      <i class="fa-solid fa-qrcode"></i>
+      <input type="text" id="mfaToken" class="mfa-token" placeholder="000000" maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code">
+    </div>
+    <div class="form-group" id="backupInputGroup" style="display:none">
+      <i class="fa-solid fa-key"></i>
+      <input type="text" id="backupCodeInput" class="mfa-token" placeholder="00000000" maxlength="8" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+    </div>
+    <button class="btn-login" id="mfaBtn" onclick="submitMFA()">
+      <span id="mfaBtnText">Verify</span>
+      <div class="spinner" id="mfaSpinner"></div>
+    </button>
+    <div style="text-align:center;margin-top:12px;display:flex;gap:8px;justify-content:center">
+      <button class="btn-soft" onclick="backToLogin()"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <button class="btn-soft" id="useBackupBtn" onclick="toggleBackupCodeMode()" style="font-size:12px"><i class="fa-solid fa-shield"></i> Use Backup Code</button>
+    </div>
+  </div>
+
+  <div class="footer-text"><span>WireGuard Zero Trust Gateway v1.0</span></div>
+</div>
+<script>
+let preauthToken=sessionStorage.getItem('preauth_token')||'',mfaUser=sessionStorage.getItem('mfa_user')||'',mfaRole=sessionStorage.getItem('mfa_role')||'',backupCodeMode=false;
+const form=document.getElementById('loginForm'),username=document.getElementById('username'),password=document.getElementById('password'),remember=document.getElementById('rememberUser'),errorMsg=document.getElementById('errorMsg'),errorText=document.getElementById('errorText'),loginBtn=document.getElementById('loginBtn'),btnText=document.getElementById('btnText'),spinner=document.getElementById('spinner');
+const mfaToken=document.getElementById('mfaToken'),backupCodeInput=document.getElementById('backupCodeInput'),mfaBtn=document.getElementById('mfaBtn'),mfaBtnText=document.getElementById('mfaBtnText'),mfaSpinner=document.getElementById('mfaSpinner');
+const saved=localStorage.getItem('iam_last_user');
+if(saved){username.value=saved;password.focus()}else username.focus();
+
+(async()=>{
+  const t=localStorage.getItem('iam_token');
+  if(!t)return;
+  try{
+    const r=await fetch('/api/auth/session',{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME'},body:JSON.stringify({token:t})});
+    if(r.ok){const d=await r.json();window.location.href=d.role==='admin'?'/admin':'/employee'}
+  }catch(e){}
+})();
+
+function showError(m){errorText.textContent=m;errorMsg.style.display='block'}
+function hideError(){errorMsg.style.display='none'}
+function setStep(n){
+  document.querySelectorAll('.step-dot').forEach((d,i)=>d.className='step-dot'+(i<n?' done':'')+(i===n?' active':''));
+  document.querySelectorAll('.auth-step').forEach((s,i)=>s.className='auth-step'+(i===n?' active':''))
+}
+function backToLogin(){setStep(0);hideError();password.value='';password.focus();sessionStorage.removeItem('preauth_token');sessionStorage.removeItem('mfa_user');sessionStorage.removeItem('mfa_role')}
+
+form.onsubmit=async function(e){
+  e.preventDefault();hideError();
+  btnText.textContent='';spinner.style.display='block';loginBtn.disabled=true;
+  try{
+    const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME'},body:JSON.stringify({username:username.value.trim(),password:password.value})});
+    if(!r.ok){const d=await r.json();throw new Error(d.detail||'Login failed')}
+    const d=await r.json();
+    if(d.mfa_required){
+      preauthToken=d.preauth_token;mfaUser=d.username;mfaRole=d.role;
+      sessionStorage.setItem('preauth_token',d.preauth_token);
+      sessionStorage.setItem('mfa_user',d.username);
+      sessionStorage.setItem('mfa_role',d.role);
+      setStep(1);hideError();
+      btnText.textContent='Sign In';spinner.style.display='none';loginBtn.disabled=false;
+      mfaToken.value='';mfaToken.focus();
+      // First-time MFA provisioning: show secret + provisioning_uri + backup codes
+      if(d.mfa_provisioning){
+        document.getElementById('mfaProvSecret').textContent=d.mfa_secret;
+        document.getElementById('mfaProvisionInfo').style.display='block';
+        document.getElementById('provisioningUri').href='data:text/plain,'+encodeURIComponent(d.provisioning_uri);
+        if(d.backup_codes&&d.backup_codes.length){
+          document.getElementById('backupCodesDisplay').style.display='block';
+          document.getElementById('backupCodesList').textContent=d.backup_codes.join('  ');
+        }
+      }
+      return
+    }
+    localStorage.setItem('iam_token',d.token);
+    localStorage.setItem('iam_user',d.username);
+    localStorage.setItem('iam_role',d.role);
+    if(remember.checked)localStorage.setItem('iam_last_user',d.username);
+    else localStorage.removeItem('iam_last_user');
+    window.location.href=d.role==='admin'?'/admin':'/employee';
+  }catch(e){
+    showError(e.message);
+    btnText.textContent='Sign In';spinner.style.display='none';loginBtn.disabled=false;
+    password.value='';password.focus();
+  }
+}
+
+function toggleBackupCodeMode(){
+  backupCodeMode=!backupCodeMode;
+  document.getElementById('totpInputGroup').style.display=backupCodeMode?'none':'block';
+  document.getElementById('backupInputGroup').style.display=backupCodeMode?'block':'none';
+  document.getElementById('useBackupBtn').textContent=backupCodeMode?'Use Authenticator App':'Use Backup Code';
+  hideError();
+  if(backupCodeMode){backupCodeInput.value='';backupCodeInput.focus()}
+  else{mfaToken.value='';mfaToken.focus()}
+}
+
+async function submitMFA(){
+  hideError();
+  let endpoint,body;
+  if(backupCodeMode){
+    const code=backupCodeInput.value.trim();
+    if(code.length!==8){backupCodeInput.focus();return}
+    endpoint='/api/auth/verify-backup-code';
+    body=JSON.stringify({preauth_token:preauthToken,backup_code:code});
+  }else{
+    const t=mfaToken.value.trim();
+    if(t.length!==6){mfaToken.focus();return}
+    endpoint='/api/auth/verify-mfa';
+    body=JSON.stringify({preauth_token:preauthToken,token:t});
+  }
+  mfaBtnText.textContent='';mfaSpinner.style.display='block';mfaBtn.disabled=true;
+  try{
+    const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME'},body});
+    if(!r.ok){const d=await r.json();throw new Error(d.detail||'Verification failed')}
+    const d=await r.json();
+
+    // Layer 3: Email OTP for admin accounts
+    if(d.email_otp_required){
+      localStorage.setItem('iam_email_otp_token',d.email_otp_token);
+      localStorage.setItem('iam_user',d.username);
+      localStorage.setItem('iam_role',d.role);
+      if(remember.checked)localStorage.setItem('iam_last_user',d.username);
+      else localStorage.removeItem('iam_last_user');
+      window.location.href='/email-verification';
+      return
+    }
+
+    localStorage.setItem('iam_token',d.token);
+    localStorage.setItem('iam_user',d.username);
+    localStorage.setItem('iam_role',d.role);
+    if(remember.checked)localStorage.setItem('iam_last_user',d.username);
+    else localStorage.removeItem('iam_last_user');
+    window.location.href=d.role==='admin'?'/admin':'/employee';
+  }catch(e){
+    showError(e.message);
+    mfaBtnText.textContent='Verify';mfaSpinner.style.display='none';mfaBtn.disabled=false;
+    if(backupCodeMode){backupCodeInput.value='';backupCodeInput.focus()}
+    else{mfaToken.value='';mfaToken.focus()}
+  }
+}
+
+mfaToken.addEventListener('input',function(){if(this.value.length===6)submitMFA()})
+backupCodeInput.addEventListener('input',function(){if(this.value.length===8)submitMFA()})
+
+// MFA provisioning is handled server-side during admin login
+</script>
+</body>
+</html>

@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin &middot; IAM Gateway</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+body{background:#0b0b1a;color:#e2e8f0;min-height:100vh}
+.topbar{
+  background:rgba(15,15,35,.8);backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(255,255,255,.05);
+  padding:16px 32px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100
+}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.topbar-left i{font-size:22px;color:#818cf8}
+.topbar-left h1{font-size:18px;font-weight:600}
+.topbar-left span{font-size:13px;color:#64748b;font-weight:400}
+.topbar-right{display:flex;align-items:center;gap:16px;font-size:14px}
+.topbar-right .user-badge{background:rgba(99,102,241,.15);color:#a5b4fc;padding:6px 14px;border-radius:8px;font-size:13px}
+.topbar-right a{color:#94a3b8;text-decoration:none;transition:color .2s;display:flex;align-items:center;gap:6px}
+.topbar-right a:hover{color:#818cf8}
+.container{max-width:1440px;margin:0 auto;padding:28px 32px}
+.section{margin-bottom:36px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.section-header h2{font-size:16px;font-weight:600;display:flex;align-items:center;gap:10px}
+.section-header h2 i{color:#818cf8;font-size:18px}
+.section-header h2 .count{background:rgba(99,102,241,.15);color:#a5b4fc;font-size:12px;padding:2px 10px;border-radius:99px;font-weight:500}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:24px;backdrop-filter:blur(8px)}
+/* ─── CREATE USER ─── */
+.form-row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+.form-row .fg{flex:1;min-width:140px}
+.form-row .fg label{display:block;font-size:12px;color:#64748b;margin-bottom:6px;font-weight:500}
+.form-row .fg input,.form-row .fg select{
+  width:100%;padding:10px 14px;background:rgba(15,23,42,.6);border:1px solid rgba(148,163,184,.12);
+  border-radius:10px;color:#e2e8f0;font-size:14px;outline:none;transition:all .2s
+}
+.form-row .fg input:focus,.form-row .fg select:focus{border-color:#818cf8;box-shadow:0 0 0 2px rgba(99,102,241,.15)}
+.form-row .fg select option{background:#1e1e3a;color:#e2e8f0}
+.btn{
+  padding:10px 20px;border:none;border-radius:10px;font-size:14px;font-weight:600;
+  cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px
+}
+.btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(99,102,241,.3)}
+.btn-sm{padding:7px 14px;font-size:12px;border-radius:8px}
+.btn-soft{background:rgba(99,102,241,.12);color:#a5b4fc}
+.btn-soft:hover{background:rgba(99,102,241,.2)}
+.btn-danger{background:rgba(239,68,68,.15);color:#fca5a5}
+.btn-danger:hover{background:rgba(239,68,68,.25)}
+.btn-success{background:rgba(34,197,94,.15);color:#86efac}
+.btn-success:hover{background:rgba(34,197,94,.25)}
+.btn-warning{background:rgba(234,179,8,.15);color:#fde68a}
+.btn-warning:hover{background:rgba(234,179,8,.25)}
+/* ─── USER LIST + DETAIL PANEL ─── */
+.user-layout{display:flex;gap:20px;min-height:500px}
+.user-list-panel{width:320px;flex-shrink:0;display:flex;flex-direction:column}
+.user-detail-panel{flex:1;min-width:0}
+.user-list{max-height:540px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding:4px}
+.user-list-item{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  border-radius:10px;cursor:pointer;transition:all .15s;
+  border:1px solid transparent
+}
+.user-list-item:hover{background:rgba(255,255,255,.04);border-color:rgba(99,102,241,.15)}
+.user-list-item.active{background:rgba(99,102,241,.12);border-color:rgba(99,102,241,.3)}
+.user-list-avatar{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;flex-shrink:0
+}
+.user-list-info{flex:1;min-width:0}
+.user-list-name{font-size:13px;font-weight:600}
+.user-list-meta{font-size:11px;color:#64748b;margin-top:1px}
+.user-list-badge{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600}
+.user-list-badge.mfa-on{background:rgba(34,197,94,.12);color:#86efac}
+.user-list-badge.mfa-off{background:rgba(148,163,184,.08);color:#64748b}
+.detail-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:16px
+}
+.detail-avatar{
+  width:44px;height:44px;border-radius:12px;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;color:#fff;flex-shrink:0
+}
+.detail-info{flex:1}
+.detail-info .name{font-size:16px;font-weight:600}
+.detail-info .meta{font-size:12px;color:#64748b;margin-top:2px;display:flex;gap:12px;flex-wrap:wrap}
+.detail-info .meta span{display:flex;align-items:center;gap:4px}
+.detail-actions{display:flex;gap:8px}
+.detail-section{margin-bottom:20px}
+.detail-section h4{font-size:13px;color:#94a3b8;font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.resource-list{display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto}
+.resource-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 10px;border-radius:8px;transition:all .15s;
+  border:1px solid rgba(255,255,255,.04)
+}
+.resource-row:hover{background:rgba(255,255,255,.03);border-color:rgba(99,102,241,.12)}
+.resource-label{display:flex;align-items:center;gap:8px;font-size:13px;color:#cbd5e1}
+.resource-label i{width:18px;text-align:center;color:#64748b;font-size:14px}
+.resource-row-actions{display:flex;align-items:center;gap:10px}
+.toggle-btn{
+  width:36px;height:22px;border-radius:99px;border:none;cursor:pointer;
+  position:relative;transition:all .3s;padding:0;flex-shrink:0
+}
+.toggle-btn.on{background:#6366f1}
+.toggle-btn.off{background:rgba(148,163,184,.2)}
+.toggle-btn::after{
+  content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;
+  border-radius:50%;background:#fff;transition:transform .2s
+}
+.toggle-btn.on::after{transform:translateX(14px)}
+.toggle-btn.off::after{transform:translateX(0)}
+.detail-empty{text-align:center;padding:60px 20px;color:#475569}
+.detail-empty i{font-size:40px;margin-bottom:12px;opacity:.5}
+/* ─── SESSION ROW ─── */
+.session-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.session-row:last-child{border:none}
+.session-dot{width:8px;height:8px;border-radius:50%;margin-right:10px;flex-shrink:0}
+.session-dot.active{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,.4)}
+/* ─── MODAL OVERLAY ─── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;z-index:999
+}
+.modal-overlay.show{display:flex}
+.modal-box{
+  background:#1b1b3a;border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;padding:32px;width:420px;max-width:90vw;animation:fadeUp .25s ease-out
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px) scale(.97)}}
+.modal-box h3{font-size:18px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.modal-box p{color:#94a3b8;font-size:14px;margin-bottom:24px;line-height:1.5}
+.modal-actions{display:flex;gap:12px;justify-content:end}
+.modal-actions .btn{min-width:100px;justify-content:center}
+/* ─── SIEM ─── */
+.siem-filter{display:flex;gap:12px;margin-bottom:14px}
+.siem-filter input{
+  flex:1;padding:10px 14px;background:rgba(15,23,42,.6);border:1px solid rgba(148,163,184,.12);
+  border-radius:10px;color:#e2e8f0;font-size:14px;outline:none
+}
+.siem-filter input:focus{border-color:#818cf8}
+.siem-log{max-height:280px;overflow-y:auto;font-family:'SF Mono','Fira Code','Courier New',monospace;font-size:12px;line-height:1.7}
+.siem-entry{padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03);display:flex;gap:12px;opacity:0;animation:logIn .3s forwards}
+@keyframes logIn{to{opacity:1}}
+.siem-entry .ts{color:#64748b;white-space:nowrap;min-width:80px}
+.siem-entry .sv{font-weight:600;padding:0 8px;border-radius:4px;font-size:11px;min-width:60px;text-align:center}
+.siem-entry .sv.AUTH{color:#22c55e}
+.siem-entry .sv.ADMIN{color:#818cf8}
+.siem-entry .sv.ACCESS{color:#22c55e}
+.siem-entry .sv.DENY{color:#ef4444}
+.siem-entry .sv.ALERT{color:#f59e0b}
+.siem-entry .sv.RECOVER{color:#22c55e}
+.siem-entry .sv.RISK{color:#f97316}
+.siem-entry .sv.MFA_OK{color:#22c55e}
+.siem-entry .sv.MFA_FAIL{color:#ef4444}
+.siem-entry .msg{color:#cbd5e1}
+/* ─── TABS ─── */
+.tabs{display:flex;gap:4px;margin-bottom:18px;background:rgba(0,0,0,.2);padding:4px;border-radius:12px;width:fit-content}
+.tab{
+  padding:8px 18px;border:none;border-radius:8px;background:transparent;
+  color:#64748b;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s
+}
+.tab.active{background:rgba(99,102,241,.2);color:#a5b4fc}
+.tab:hover:not(.active){color:#94a3b8}
+.tab-content{display:none}
+.tab-content.active{display:block;animation:fadeUp .25s ease-out}
+.empty-state{text-align:center;padding:40px 20px;color:#475569}
+.empty-state i{font-size:36px;margin-bottom:12px;opacity:.5}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(148,163,184,.15);border-radius:99px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <i class="fa-solid fa-shield-halved"></i>
+    <div><h1>Admin Console <span>&middot; IAM Gateway</span></h1></div>
+  </div>
+  <div class="topbar-right">
+    <span class="user-badge"><i class="fa-solid fa-user-shield"></i> <span id="topUser">&mdash;</span></span>
+    <a href="/employee"><i class="fa-solid fa-eye"></i> Employee View</a>
+    <a href="#" onclick="openChangePw();return false"><i class="fa-solid fa-key"></i> Change Password</a>
+    <a href="#" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" data-tab="users"><i class="fa-solid fa-users-gear"></i> Users</button>
+    <button class="tab" data-tab="sessions"><i class="fa-solid fa-right-to-bracket"></i> Sessions</button>
+    <button class="tab" data-tab="siem"><i class="fa-solid fa-terminal"></i> SIEM</button>
+  </div>
+
+  <!-- ─── USERS TAB ─── -->
+  <div class="tab-content active" id="tab-users">
+
+    <div class="section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-user-plus"></i> Create User</h2>
+        <button class="btn btn-soft btn-sm" onclick="syncLDAP()"><i class="fa-solid fa-cloud-arrow-down"></i> Sync LDAP</button>
+      </div>
+      <div class="card">
+        <div class="form-row">
+          <div class="fg"><label>Username</label><input id="newUser" placeholder="e.g. jdoe"></div>
+          <div class="fg"><label>Password</label><input id="newPass" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"></div>
+          <div class="fg"><label>VPN IP</label><input id="newIP" value="10.0.0."></div>
+          <div class="fg"><label>Department</label><select id="newRole"></select></div>
+          <button class="btn btn-primary" onclick="createUser()"><i class="fa-solid fa-plus"></i> Create</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-table-cells"></i> Access Control <span class="count" id="userCount">0</span></h2>
+      </div>
+      <div class="card user-layout">
+        <div class="user-list-panel">
+          <div style="font-size:12px;color:#64748b;padding:4px 4px 8px;font-weight:500">USERS</div>
+          <div class="user-list" id="userList"></div>
+        </div>
+        <div class="user-detail-panel" id="userDetail">
+          <div class="detail-empty">
+            <i class="fa-solid fa-user"></i><br>
+            Select a user to view details
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SESSIONS TAB ─── -->
+  <div class="tab-content" id="tab-sessions">
+    <div class="section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-right-to-bracket"></i> Active Sessions <span class="count" id="sessionCount">0</span></h2>
+        <button class="btn btn-soft btn-sm" onclick="loadSessions()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+      </div>
+      <div class="card" id="sessionList"></div>
+    </div>
+  </div>
+
+  <!-- ─── SIEM TAB ─── -->
+  <div class="tab-content" id="tab-siem">
+    <div class="section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-terminal"></i> SIEM Event Log <span class="count" id="logCount">0</span></h2>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-soft btn-sm" onclick="loadLogs()"><i class="fa-solid fa-rotate"></i> Refresh</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmedClear()"><i class="fa-solid fa-trash-can"></i> Clear</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmedPurge()" style="background:#7c3aed;border-color:#7c3aed"><i class="fa-solid fa-bomb"></i> Wipe All Logs & Reset Cache</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="siem-filter">
+          <i class="fa-solid fa-filter" style="color:#64748b;line-height:40px"></i>
+          <input id="logFilter" placeholder="Filter by status, user, resource..." oninput="renderLogs()">
+        </div>
+        <div class="siem-log" id="logEntries"><div class="empty-state"><i class="fa-solid fa-list"></i><br>No log entries</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CONFIRM MODAL ─── -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <h3><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b"></i> <span id="modalTitle">Confirm</span></h3>
+    <p id="modalBody">Are you sure?</p>
+    <div class="modal-actions">
+      <button class="btn btn-soft" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" id="modalConfirmBtn" onclick=""><i class="fa-solid fa-check"></i> Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── RESET PASSWORD MODAL ─── -->
+<div class="modal-overlay" id="resetPwModal">
+  <div class="modal-box">
+    <h3><i class="fa-solid fa-key" style="color:#818cf8"></i> Reset Password</h3>
+    <p>Set a new password for <strong id="resetPwUser">&mdash;</strong></p>
+    <div class="form-row" style="margin-top:16px">
+      <div class="fg">
+        <label>New Password</label>
+        <input type="password" id="resetPwInput" placeholder="Min 6 characters" style="width:100%;padding:10px 14px;background:rgba(15,23,42,.6);border:1px solid rgba(148,163,184,.12);border-radius:10px;color:#e2e8f0;font-size:14px;outline:none">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-soft" onclick="closeResetPw()">Cancel</button>
+      <button class="btn btn-primary" onclick="executeResetPw()"><i class="fa-solid fa-check"></i> Update</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CHANGE PASSWORD MODAL ─── -->
+<div class="modal-overlay" id="changePwModal">
+  <div class="modal-box">
+    <h3><i class="fa-solid fa-key" style="color:#818cf8"></i> Change Password</h3>
+    <p>Enter your current password and a new strong password.</p>
+    <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:24px">
+      <div class="fg">
+        <label style="display:block;font-size:12px;color:#64748b;margin-bottom:6px;font-weight:500">Current Password</label>
+        <input type="password" id="cpOldPw" placeholder="Current password" style="width:100%;padding:10px 14px;background:rgba(15,23,42,.6);border:1px solid rgba(148,163,184,.12);border-radius:10px;color:#e2e8f0;font-size:14px;outline:none">
+      </div>
+      <div class="fg">
+        <label style="display:block;font-size:12px;color:#64748b;margin-bottom:6px;font-weight:500">New Password</label>
+        <input type="password" id="cpNewPw" placeholder="Min 8 chars, 1 uppercase, 1 digit" style="width:100%;padding:10px 14px;background:rgba(15,23,42,.6);border:1px solid rgba(148,163,184,.12);border-radius:10px;color:#e2e8f0;font-size:14px;outline:none">
+        <div style="font-size:11px;color:#64748b;margin-top:4px">At least 8 characters, 1 uppercase letter, 1 digit</div>
+      </div>
+      <div class="fg">
+        <label style="display:block;font-size:12px;color:#64748b;margin-bottom:6px;font-weight:500">Confirm New Password</label>
+        <input type="password" id="cpConfirmPw" placeholder="Repeat new password" style="width:100%;padding:10px 14px;background:rgba(15,23,42,.6);border:1px solid rgba(148,163,184,.12);border-radius:10px;color:#e2e8f0;font-size:14px;outline:none">
+      </div>
+      <div id="cpError" style="color:#ef4444;font-size:13px;display:none"></div>
+      <div id="cpSuccess" style="color:#22c55e;font-size:13px;display:none"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-soft" onclick="closeChangePw()">Cancel</button>
+      <button class="btn btn-primary" id="cpSubmitBtn" onclick="executeChangePw()"><i class="fa-solid fa-check"></i> Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── PROVISION MFA MODAL ─── -->
+<div class="modal-overlay" id="mfaProvisionModal">
+  <div class="modal-box">
+    <h3><i class="fa-solid fa-shield-halved" style="color:#f59e0b"></i> MFA Provisioned</h3>
+    <p>Share this secret with <strong id="mfaProvUser">&mdash;</strong> to set up their authenticator app:</p>
+    <div style="text-align:center;margin:20px 0">
+      <div style="font-family:'SF Mono','Fira Code',monospace;font-size:18px;letter-spacing:3px;color:#a5b4fc;background:rgba(0,0,0,.3);padding:14px 20px;border-radius:10px;display:inline-block;user-select:all" id="mfaProvSecret">---</div>
+      <p style="font-size:11px;color:#475569;margin-top:8px">Click to copy, then scan in authenticator app</p>
+    </div>
+    <div id="mfaProvNote" style="font-size:12px;color:#f59e0b;margin-bottom:12px;display:none">
+      <i class="fa-solid fa-triangle-exclamation"></i> The user's existing MFA key has been replaced. They must scan this new key.
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="closeMfaProv()"><i class="fa-solid fa-check"></i> Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── VIEW MFA KEY MODAL ─── -->
+<div class="modal-overlay" id="viewMFAModal">
+  <div class="modal-box">
+    <h3><i class="fa-solid fa-shield-halved" style="color:#818cf8"></i> MFA Key — <span id="viewMFAUser">&mdash;</span></h3>
+    <div id="viewMFANotProvisioned" style="display:none">
+      <p style="color:#94a3b8;margin-bottom:16px">This user has not yet set up MFA.</p>
+    </div>
+    <div id="viewMFAProvisioned" style="display:none">
+      <p style="color:#94a3b8;margin-bottom:16px">Current MFA configuration. Share this secret if the user needs to re-add it to their authenticator app:</p>
+      <div style="text-align:center;margin:16px 0">
+        <div style="font-family:'SF Mono','Fira Code',monospace;font-size:18px;letter-spacing:3px;color:#a5b4fc;background:rgba(0,0,0,.3);padding:14px 20px;border-radius:10px;display:inline-block;user-select:all" id="viewMFASecret">---</div>
+        <p style="font-size:11px;color:#475569;margin-top:8px">Current key — read only, not changed</p>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="closeViewMFA()"><i class="fa-solid fa-check"></i> Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let resources=[],roleDefaults={};
+const token=localStorage.getItem('iam_token');
+if(!token){window.location.href='/login'}
+
+async function api(path,method,body){
+  const r=await fetch(path,{method,headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME',...(!body?{}:{})},body:body?JSON.stringify(body):undefined});
+  if(!r.ok){const d=await r.json();throw new Error(d.detail||'Request failed')}
+  return r.json()
+}
+
+// ─── LOAD ───
+async function loadAll(){
+  try{const s=await api('/api/auth/session','POST',{token});if(s.role!=='admin'){localStorage.clear();window.location.href='/login';return}}catch(e){localStorage.clear();window.location.href='/login';return}
+  document.getElementById('topUser').textContent=localStorage.getItem('iam_user')||'admin';
+  const d=await api('/api/admin/users','GET');
+  const rd=await api('/api/resources','GET');
+  resources=Object.entries(rd.catalog);
+  roleDefaults=rd.role_defaults||{};
+  // populate role select
+  const sel=document.getElementById('newRole');sel.innerHTML='';
+  Object.keys(roleDefaults).sort().forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r;sel.appendChild(o)});
+  renderMatrix(d.users);
+  loadSessions();
+  loadLogs();
+}
+
+// ─── USER LIST + DETAIL ───
+let selectedUser=null,allUsers={};
+
+function renderMatrix(users){
+  allUsers=users;
+  const entries=Object.entries(users);
+  document.getElementById('userCount').textContent=entries.length;
+  const list=document.getElementById('userList');
+  if(!entries.length){list.innerHTML='<div class="empty-state"><i class="fa-solid fa-users"></i><br>No users</div>';document.getElementById('userDetail').innerHTML='';return}
+  list.innerHTML=entries.map(([name,data])=>{
+    const role=data.role,ip=data.vpn_ip,mfa=data.mfa_provisioned;
+    const initial=name.charAt(0).toUpperCase();
+    const active=selectedUser===name?' active':'';
+    const mfaDot=mfa?'<span class="user-list-badge mfa-on">MFA</span>':'<span class="user-list-badge mfa-off">No MFA</span>';
+    const adminBadge=name==='admin'?' <span style="font-size:10px;color:#f59e0b">&#128274;</span>':'';
+    return `<div class="user-list-item${active}" onclick="selectUser('${name}')">
+      <div class="user-list-avatar">${initial}</div>
+      <div class="user-list-info">
+        <div class="user-list-name">${name}${adminBadge}</div>
+        <div class="user-list-meta">${role} &middot; ${ip}</div>
+      </div>
+      ${mfaDot}
+    </div>`
+  }).join('');
+  if(selectedUser&&allUsers[selectedUser])renderUserDetail(selectedUser);
+  else if(entries.length)selectUser(entries[0][0])
+}
+
+function selectUser(name){
+  selectedUser=name;
+  renderMatrix(allUsers);
+  renderUserDetail(name)
+}
+
+function renderUserDetail(name){
+  const data=allUsers[name];
+  if(!data){document.getElementById('userDetail').innerHTML='<div class="detail-empty"><i class="fa-solid fa-user"></i><br>Select a user</div>';return}
+  const role=data.role,ip=data.vpn_ip,mfa=data.mfa_provisioned;
+  const initial=name.charAt(0).toUpperCase();
+  const isAdmin=name==='admin';
+  const resKeys=resources.map(([k])=>k);
+  const mfaStatus=mfa?'<span style="color:#22c55e"><i class="fa-solid fa-shield-check"></i> MFA Active</span>':'<span style="color:#64748b"><i class="fa-solid fa-shield"></i> MFA Not Set</span>';
+  let html=`
+    <div class="detail-header">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div class="detail-avatar">${initial}</div>
+        <div class="detail-info">
+          <div class="name">${name}</div>
+          <div class="meta">
+            <span><i class="fa-solid fa-tag"></i> ${role}</span>
+            <span><i class="fa-solid fa-network-wired"></i> ${ip}</span>
+            <span>${mfaStatus}</span>
+          </div>
+        </div>
+      </div>
+      <div class="detail-actions">`;
+  if(!isAdmin){
+    html+=`<button class="btn btn-soft btn-sm" onclick="openResetPw('${name}')" title="Reset Password"><i class="fa-solid fa-key"></i> Reset PW</button>`;
+    html+=`<button class="btn btn-soft btn-sm" onclick="viewMFAKey('${name}')" title="View Current MFA Key"><i class="fa-solid fa-eye"></i> View MFA</button>`;
+    html+=`<button class="btn btn-warning btn-sm" onclick="generateNewMFAKey('${name}')" title="Generate New MFA Key"><i class="fa-solid fa-rotate"></i> New Key</button>`;
+    html+=`<button class="btn btn-danger btn-sm" onclick="confirmDelete('${name}')" title="Delete User"><i class="fa-solid fa-trash-can"></i> Delete</button>`;
+  } else {
+    html+=`<span style="color:#64748b;font-size:12px;padding:6px 12px;background:rgba(255,255,255,.04);border-radius:8px"><i class="fa-solid fa-lock"></i> Protected Admin</span>`
+  }
+  html+=`</div></div>
+    <div class="detail-section">
+      <h4><i class="fa-solid fa-key"></i> Resource Permissions</h4>
+      <div class="resource-list">`;
+  resKeys.forEach(k=>{
+    const v=resources.find(([rk])=>rk===k);
+    const on=data.allowed_resources.includes(k);
+    html+=`<div class="resource-row">
+      <span class="resource-label"><i class="${v?v[1].icon:'fa-solid fa-circle'}"></i>${v?v[1].name:k}</span>
+      <div class="resource-row-actions">
+        <span style="font-size:12px;color:${on?'#86efac':'#64748b'};min-width:30px;text-align:right">${on?'Grant':'Deny'}</span>
+        <button class="toggle-btn ${on?'on':'off'}" onclick="togglePerm('${name}','${k}',${on})"></button>
+      </div>
+    </div>`
+  });
+  html+=`</div></div>`;
+  document.getElementById('userDetail').innerHTML=html
+}
+
+async function togglePerm(name,res,currentlyOn){
+  const action=currentlyOn?'revoke':'grant';
+  await api('/api/admin/modify-permissions','POST',{username:name,resource_id:res,action});
+  const d=await api('/api/admin/users','GET');
+  renderMatrix(d.users)
+}
+
+// ─── CREATE ───
+async function createUser(){
+  const u=document.getElementById('newUser').value.trim(),p=document.getElementById('newPass').value;
+  const ip=document.getElementById('newIP').value.trim(),r=document.getElementById('newRole').value;
+  if(!u||!p||!ip)return alert('Fill all fields');
+  if(p.length<8||!/[A-Z]/.test(p)||!/\d/.test(p))return alert('Password: min 8 chars, 1 uppercase, 1 digit');
+
+async function syncLDAP(){
+  try{const d=await api('/api/admin/ldap-sync','POST');alert('LDAP sync completed');loadAll()}catch(e){alert(e.message)}
+}
+  try{
+    await api('/api/admin/create-user','POST',{username:u,password:p,vpn_ip:ip,role:r});
+    document.getElementById('newUser').value='';document.getElementById('newPass').value='';
+    const d=await api('/api/admin/users','GET');renderMatrix(d.users);
+    loadLogs()
+  }catch(e){alert(e.message)}
+}
+
+// ─── DELETE (MODAL) ───
+let pendingDelete=null;
+
+function confirmDelete(name){
+  pendingDelete=name;
+  document.getElementById('modalTitle').textContent='Delete User';
+  document.getElementById('modalBody').innerHTML=`Remove <strong>${name}</strong> and all their permissions? This cannot be undone.`;
+  document.getElementById('modalConfirmBtn').onclick=executeDelete;
+  document.getElementById('confirmModal').classList.add('show')
+}
+
+async function executeDelete(){
+  try{
+    await api('/api/admin/delete-user?username='+encodeURIComponent(pendingDelete),'POST');
+    closeModal();
+    const d=await api('/api/admin/users','GET');renderMatrix(d.users);
+    loadLogs()
+  }catch(e){alert(e.message);closeModal()}
+}
+
+function closeModal(){document.getElementById('confirmModal').classList.remove('show')}
+
+// ─── RESET PASSWORD ───
+let resetPwTarget='';
+function openResetPw(name){
+  resetPwTarget=name;
+  document.getElementById('resetPwUser').textContent=name;
+  document.getElementById('resetPwInput').value='';
+  document.getElementById('resetPwModal').classList.add('show');
+  setTimeout(()=>document.getElementById('resetPwInput').focus(),100)
+}
+function closeResetPw(){document.getElementById('resetPwModal').classList.remove('show')}
+async function executeResetPw(){
+  const pw=document.getElementById('resetPwInput').value;
+  if(pw.length<8||!/[A-Z]/.test(pw)||!/\d/.test(pw)){alert('Password: min 8 chars, 1 uppercase, 1 digit');return}
+  try{
+    await api('/api/admin/reset-password','POST',{username:resetPwTarget,new_password:pw});
+    closeResetPw();
+    loadLogs()
+  }catch(e){alert(e.message)}
+}
+
+// ─── PROVISION MFA ───
+async function provisionMFA(name){
+  try{
+    const d=await api('/api/mfa/provision?username='+encodeURIComponent(name),'POST');
+    document.getElementById('mfaProvUser').textContent=name;
+    document.getElementById('mfaProvSecret').textContent=d.secret;
+    document.getElementById('mfaProvNote').style.display='none';
+    document.getElementById('mfaProvisionModal').classList.add('show');
+    const rd=await api('/api/admin/users','GET');
+    renderMatrix(rd.users)
+  }catch(e){alert(e.message)}
+}
+function closeMfaProv(){document.getElementById('mfaProvisionModal').classList.remove('show')}
+
+// ─── VIEW MFA KEY (read-only) ───
+async function viewMFAKey(name){
+  try{
+    const d=await api('/api/admin/mfa/view','POST',{username:name});
+    document.getElementById('viewMFAUser').textContent=name;
+    if(d.mfa_provisioned){
+      document.getElementById('viewMFANotProvisioned').style.display='none';
+      document.getElementById('viewMFAProvisioned').style.display='block';
+      document.getElementById('viewMFASecret').textContent=d.mfa_secret;
+    } else {
+      document.getElementById('viewMFAProvisioned').style.display='none';
+      document.getElementById('viewMFANotProvisioned').style.display='block';
+    }
+    document.getElementById('viewMFAModal').classList.add('show');
+  }catch(e){alert(e.message)}
+}
+function closeViewMFA(){document.getElementById('viewMFAModal').classList.remove('show')}
+
+// ─── GENERATE NEW MFA KEY (admin-initiated reset) ───
+async function generateNewMFAKey(name){
+  if(!confirm(`Generate a NEW MFA key for "${name}"? This will invalidate their existing key and they will need to re-scan in their authenticator app.`))return;
+  try{
+    const d=await api('/api/admin/mfa/reset','POST',{username:name});
+    document.getElementById('mfaProvUser').textContent=name;
+    document.getElementById('mfaProvSecret').textContent=d.mfa_secret;
+    document.getElementById('mfaProvNote').style.display='block';
+    document.getElementById('mfaProvisionModal').classList.add('show');
+    const rd=await api('/api/admin/users','GET');
+    renderMatrix(rd.users)
+  }catch(e){alert(e.message)}
+}
+
+// ─── CLEAR LOGS (MODAL) ───
+function confirmedClear(){
+  document.getElementById('modalTitle').textContent='Clear SIEM Logs';
+  document.getElementById('modalBody').textContent='Delete all event log entries? This cannot be undone.';
+  document.getElementById('modalConfirmBtn').onclick=executeClear;
+  document.getElementById('confirmModal').classList.add('show')
+}
+
+async function executeClear(){
+  try{await api('/api/admin/clear-logs','POST');closeModal();loadLogs()}catch(e){alert(e.message);closeModal()}
+}
+
+function confirmedPurge(){
+  document.getElementById('modalTitle').textContent='Wipe All Logs & Reset Database Cache';
+  document.getElementById('modalBody').textContent='This will clear the event log and invalidate all non-admin sessions. Admin MFA stays intact. This action is irreversible.';
+  document.getElementById('modalConfirmBtn').onclick=executePurge;
+  document.getElementById('confirmModal').classList.add('show')
+}
+
+async function executePurge(){
+  try{await api('/api/admin/purge-system','POST',{username:'admin'});closeModal();loadLogs();loadSessions()}catch(e){alert(e.message);closeModal()}
+}
+
+// ─── SESSIONS ───
+async function loadSessions(){
+  try{
+    const d=await api('/api/admin/sessions','GET');
+    const list=document.getElementById('sessionList');
+    const s=d.sessions||[];
+    document.getElementById('sessionCount').textContent=s.length;
+    if(!s.length){list.innerHTML='<div class="empty-state"><i class="fa-solid fa-right-to-bracket"></i><br>No active sessions</div>';return}
+    let html='';
+    s.forEach(s=>{
+      const mins=Math.round(s.expires_in/60);
+      html+=`<div class="session-row"><div style="display:flex;align-items:center"><span class="session-dot active"></span><div><div style="font-weight:600">${s.username}</div><div style="font-size:12px;color:#64748b">${s.role} &middot; Token: ${s.token_preview}</div></div></div><span style="color:#64748b;font-size:13px">${mins}m remaining</span></div>`
+    });
+    list.innerHTML=html
+  }catch(e){}
+}
+
+setInterval(()=>{
+  if(document.querySelector('.tab.active[data-tab="sessions"]')) loadSessions()
+}, 10000);
+
+// ─── SIEM LOGS ───
+let allLogs=[];
+
+async function loadLogs(){
+  try{
+    const d=await api('/api/status','GET');
+    allLogs=(d.event_log||[]).slice().reverse();
+    renderLogs()
+  }catch(e){}
+}
+
+function renderLogs(){
+  const filter=document.getElementById('logFilter').value.toLowerCase();
+  const entries=document.getElementById('logEntries');
+  const filtered=filter?allLogs.filter(e=>(e.status+' '+e.message).toLowerCase().includes(filter)):allLogs;
+  document.getElementById('logCount').textContent=filtered.length;
+  if(!filtered.length){entries.innerHTML='<div class="empty-state"><i class="fa-solid fa-list"></i><br>No matching entries</div>';return}
+  let html='';
+  filtered.forEach(e=>{
+    const t=new Date(e.timestamp*1000).toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    html+=`<div class="siem-entry"><span class="ts">${t}</span><span class="sv ${e.status}">${e.status}</span><span class="msg">${e.message}</span></div>`
+  });
+  entries.innerHTML=html
+}
+
+// ─── TABS ───
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active')
+  })
+});
+
+// ─── CHANGE PASSWORD ───
+function openChangePw(){
+  document.getElementById('cpOldPw').value='';
+  document.getElementById('cpNewPw').value='';
+  document.getElementById('cpConfirmPw').value='';
+  document.getElementById('cpError').style.display='none';
+  document.getElementById('cpSuccess').style.display='none';
+  document.getElementById('cpSubmitBtn').disabled=false;
+  document.getElementById('cpSubmitBtn').innerHTML='<i class="fa-solid fa-check"></i> Update Password';
+  document.getElementById('changePwModal').classList.add('show');
+  setTimeout(()=>document.getElementById('cpOldPw').focus(),100)
+}
+function closeChangePw(){document.getElementById('changePwModal').classList.remove('show')}
+async function executeChangePw(){
+  const oldPw=document.getElementById('cpOldPw').value;
+  const newPw=document.getElementById('cpNewPw').value;
+  const confirmPw=document.getElementById('cpConfirmPw').value;
+  const errEl=document.getElementById('cpError');
+  const okEl=document.getElementById('cpSuccess');
+  errEl.style.display='none';okEl.style.display='none';
+  if(!oldPw||!newPw||!confirmPw){errEl.textContent='Please fill all fields';errEl.style.display='block';return}
+  if(newPw!==confirmPw){errEl.textContent='New passwords do not match';errEl.style.display='block';return}
+  if(newPw.length<8){errEl.textContent='Password must be at least 8 characters';errEl.style.display='block';return}
+  if(!/[A-Z]/.test(newPw)){errEl.textContent='Password must contain at least one uppercase letter';errEl.style.display='block';return}
+  if(!/\d/.test(newPw)){errEl.textContent='Password must contain at least one digit';errEl.style.display='block';return}
+  document.getElementById('cpSubmitBtn').disabled=true;
+  document.getElementById('cpSubmitBtn').innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+  try{
+    const d=await api('/api/auth/change-password','POST',{old_password:oldPw,new_password:newPw});
+    okEl.textContent=d.message||'Password changed successfully! Redirecting to login...';
+    okEl.style.display='block';
+    setTimeout(()=>logout(),2000)
+  }catch(e){
+    errEl.textContent=e.message;
+    errEl.style.display='block';
+    document.getElementById('cpSubmitBtn').disabled=false;
+    document.getElementById('cpSubmitBtn').innerHTML='<i class="fa-solid fa-check"></i> Update Password'
+  }
+}
+
+async function logout(){
+  try{await api('/api/auth/logout','POST',{token})}catch(e){}
+  localStorage.clear();
+  window.location.href='/login'
+}
+
+// ─── INIT ───
+loadAll()
+</script>
+</body>
+</html>

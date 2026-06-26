@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Verification &middot; IAM Gateway</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+body{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);
+  position:relative;overflow:hidden
+}
+body::before{
+  content:'';position:absolute;width:600px;height:600px;
+  background:radial-gradient(circle,rgba(99,102,241,.15),transparent 70%);
+  top:-200px;left:-200px;animation:drift 8s ease-in-out infinite alternate
+}
+body::after{
+  content:'';position:absolute;width:500px;height:500px;
+  background:radial-gradient(circle,rgba(168,85,247,.12),transparent 70%);
+  bottom:-150px;right:-150px;animation:drift 10s ease-in-out infinite alternate-reverse
+}
+@keyframes drift{0%{transform:translate(0,0)}100%{transform:translate(80px,60px)}}
+.card{
+  position:relative;z-index:1;
+  background:rgba(255,255,255,.06);backdrop-filter:blur(24px);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:24px;padding:48px 40px 40px;width:420px;
+  box-shadow:0 25px 50px -12px rgba(0,0,0,.5);
+  animation:fadeUp .6s ease-out;text-align:center
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.icon-shield{font-size:44px;color:#f59e0b;background:rgba(245,158,11,.12);padding:20px;border-radius:50%;margin-bottom:20px;display:inline-block}
+.card h1{font-size:20px;font-weight:600;color:#e2e8f0;margin-bottom:6px}
+.card p{font-size:14px;color:#94a3b8;margin-bottom:24px;line-height:1.5}
+.otp-inputs{display:flex;gap:10px;justify-content:center;margin-bottom:28px}
+.otp-inputs input{
+  width:52px;height:58px;text-align:center;font-size:24px;font-weight:600;letter-spacing:2px;
+  background:rgba(15,23,42,.5);border:1px solid rgba(148,163,184,.15);
+  border-radius:12px;color:#e2e8f0;outline:none;transition:all .2s;
+  caret-color:#818cf8
+}
+.otp-inputs input:focus{border-color:#818cf8;box-shadow:0 0 0 3px rgba(99,102,241,.15)}
+.otp-inputs input.filled{background:rgba(99,102,241,.08);border-color:rgba(99,102,241,.3)}
+.btn-primary{
+  width:100%;padding:14px;border:none;border-radius:12px;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  color:#fff;font-size:15px;font-weight:600;cursor:pointer;
+  transition:all .3s;display:flex;align-items:center;justify-content:center;gap:10px
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(99,102,241,.35)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-soft{
+  padding:10px 20px;border:none;border-radius:10px;font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px;
+  background:rgba(99,102,241,.12);color:#a5b4fc;margin-top:14px
+}
+.btn-soft:hover{background:rgba(99,102,241,.2)}
+.btn-soft:disabled{opacity:.4;cursor:not-allowed}
+.error-msg{
+  background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.25);
+  color:#fca5a5;padding:10px 14px;border-radius:10px;font-size:13px;
+  text-align:center;margin-bottom:16px;display:none
+}
+.success-msg{
+  background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);
+  color:#86efac;padding:10px 14px;border-radius:10px;font-size:13px;
+  text-align:center;margin-bottom:16px;display:none
+}
+.spinner{display:none;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.footer-text{margin-top:20px;font-size:12px;color:#475569}
+.timer{font-size:13px;color:#64748b;margin-bottom:16px}
+.timer i{margin-right:6px;color:#f59e0b}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon-shield"><i class="fa-solid fa-envelope-shield"></i></div>
+  <h1>Email Verification</h1>
+  <p>An email with a 6-digit verification code has been sent to your corporate email address. Enter the code below to complete admin access.</p>
+
+  <div class="error-msg" id="errorMsg"><i class="fa-solid fa-circle-exclamation"></i> <span id="errorText"></span></div>
+  <div class="success-msg" id="successMsg"><i class="fa-solid fa-check-circle"></i> <span id="successText"></span></div>
+
+  <div class="otp-inputs" id="otpContainer">
+    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-digit" data-index="0" autofocus>
+    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-digit" data-index="1">
+    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-digit" data-index="2">
+    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-digit" data-index="3">
+    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-digit" data-index="4">
+    <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" class="otp-digit" data-index="5">
+  </div>
+
+  <button class="btn-primary" id="verifyBtn" onclick="submitOTP()">
+    <span id="btnText">Verify &amp; Access Admin</span>
+    <div class="spinner" id="spinner"></div>
+  </button>
+
+  <div class="timer" id="timerDisplay"></div>
+
+  <button class="btn-soft" id="resendBtn" onclick="resendOTP()" disabled>
+    <i class="fa-solid fa-rotate"></i> Resend Code
+  </button>
+
+  <div class="footer-text">
+    <a href="#" style="color:#818cf8;text-decoration:none;font-size:13px" onclick="logout()">
+      <i class="fa-solid fa-arrow-left"></i> Back to Login
+    </a>
+  </div>
+</div>
+
+<script>
+let emailOtpToken = localStorage.getItem('iam_email_otp_token');
+let resendCooldown = 30;
+let timerInterval = null;
+
+(function(){
+  if (!emailOtpToken) {
+    window.location.href = '/login';
+    return;
+  }
+  if (!localStorage.getItem('iam_user') || localStorage.getItem('iam_role') !== 'admin') {
+    window.location.href = '/login';
+    return;
+  }
+  document.getElementById('topUser') && (document.getElementById('topUser').textContent = localStorage.getItem('iam_user'));
+  startResendTimer();
+})();
+
+document.querySelectorAll('.otp-digit').forEach((input, idx, arr) => {
+  input.addEventListener('input', function(e) {
+    this.value = this.value.replace(/\D/g, '');
+    if (this.value) {
+      this.classList.add('filled');
+      if (idx < arr.length - 1) arr[idx + 1].focus();
+    } else {
+      this.classList.remove('filled');
+    }
+  });
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace' && !this.value && idx > 0) {
+      arr[idx - 1].focus();
+      arr[idx - 1].value = '';
+      arr[idx - 1].classList.remove('filled');
+    }
+    if (e.key === 'Enter') submitOTP();
+  });
+  input.addEventListener('focus', function() { this.select(); });
+});
+
+function getOTP() {
+  let code = '';
+  document.querySelectorAll('.otp-digit').forEach(inp => code += inp.value);
+  return code;
+}
+
+function hideAllMessages() {
+  document.getElementById('errorMsg').style.display = 'none';
+  document.getElementById('successMsg').style.display = 'none';
+}
+
+function showError(msg) {
+  document.getElementById('errorText').textContent = msg;
+  document.getElementById('errorMsg').style.display = 'block';
+}
+
+function setOTPInputsDisabled(disabled) {
+  document.querySelectorAll('.otp-digit').forEach(inp => inp.disabled = disabled);
+}
+
+async function submitOTP() {
+  const otp = getOTP();
+  if (otp.length !== 6) { showError('Please enter all 6 digits.'); return; }
+  hideAllMessages();
+
+  document.getElementById('btnText').textContent = '';
+  document.getElementById('spinner').style.display = 'block';
+  document.getElementById('verifyBtn').disabled = true;
+  setOTPInputsDisabled(true);
+
+  try {
+    const r = await fetch('/api/auth/verify-email-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': 'CHANGE_ME' },
+      body: JSON.stringify({ email_otp_token: emailOtpToken, otp: otp })
+    });
+    if (!r.ok) { const d = await r.json(); throw new Error(d.detail || 'Verification failed'); }
+    const d = await r.json();
+    localStorage.setItem('iam_token', d.token);
+    localStorage.setItem('iam_user', d.username);
+    localStorage.setItem('iam_role', d.role);
+    localStorage.removeItem('iam_email_otp_token');
+    document.getElementById('successText').textContent = 'Access granted! Redirecting to admin console...';
+    document.getElementById('successMsg').style.display = 'block';
+    setTimeout(() => { window.location.href = '/admin'; }, 1000);
+  } catch (e) {
+    showError(e.message);
+    document.getElementById('btnText').textContent = 'Verify & Access Admin';
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('verifyBtn').disabled = false;
+    setOTPInputsDisabled(false);
+    document.querySelectorAll('.otp-digit').forEach(inp => { inp.value = ''; inp.classList.remove('filled'); });
+    document.querySelector('.otp-digit').focus();
+  }
+}
+
+async function resendOTP() {
+  if (!emailOtpToken) return;
+  hideAllMessages();
+  document.getElementById('resendBtn').disabled = true;
+
+  try {
+    const r = await fetch('/api/auth/resend-email-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': 'CHANGE_ME' },
+      body: JSON.stringify({ token: emailOtpToken })
+    });
+    if (!r.ok) { const d = await r.json(); throw new Error(d.detail || 'Failed to resend'); }
+    const d = await r.json();
+    document.getElementById('successText').textContent = d.message || 'A new code has been sent.';
+    document.getElementById('successMsg').style.display = 'block';
+    document.querySelectorAll('.otp-digit').forEach(inp => { inp.value = ''; inp.classList.remove('filled'); });
+    document.querySelector('.otp-digit').focus();
+    resendCooldown = 30;
+    startResendTimer();
+  } catch (e) {
+    showError(e.message);
+    document.getElementById('resendBtn').disabled = false;
+  }
+}
+
+function startResendTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  const btn = document.getElementById('resendBtn');
+  btn.disabled = true;
+  const display = document.getElementById('timerDisplay');
+  display.innerHTML = `<i class="fa-solid fa-clock"></i> Resend available in <strong>${resendCooldown}s</strong>`;
+
+  timerInterval = setInterval(() => {
+    resendCooldown--;
+    if (resendCooldown <= 0) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      btn.disabled = false;
+      display.innerHTML = '';
+    } else {
+      display.innerHTML = `<i class="fa-solid fa-clock"></i> Resend available in <strong>${resendCooldown}s</strong>`;
+    }
+  }, 1000);
+}
+
+async function logout(){
+  const token = localStorage.getItem('iam_token') || '';
+  try{await fetch('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME'},body:JSON.stringify({token})})}catch(e){}
+  localStorage.clear();
+  window.location.href='/login'
+}
+</script>
+</body>
+</html>

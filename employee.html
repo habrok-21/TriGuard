@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee Vault &middot; IAM Gateway</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+body{background:#0b0b1a;color:#e2e8f0;min-height:100vh}
+.topbar{
+  background:rgba(15,15,35,.8);backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(255,255,255,.05);
+  padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100
+}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.topbar-left i{font-size:22px;color:#818cf8}
+.topbar-left h1{font-size:18px;font-weight:600}
+.topbar-left h1 span{font-size:13px;color:#64748b;font-weight:400}
+.topbar-right{display:flex;align-items:center;gap:16px;font-size:14px}
+.topbar-right .user-badge{background:rgba(99,102,241,.15);color:#a5b4fc;padding:6px 14px;border-radius:8px;font-size:13px}
+.topbar-right a{color:#94a3b8;text-decoration:none;transition:color .2s;display:flex;align-items:center;gap:6px}
+.topbar-right a:hover{color:#818cf8}
+.container{max-width:1200px;margin:0 auto;padding:28px 32px}
+/* ─── CARDS GRID ─── */
+.section{margin-bottom:36px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.section-header h2{font-size:16px;font-weight:600;display:flex;align-items:center;gap:10px}
+.section-header h2 i{color:#818cf8;font-size:18px}
+.section-header h2 .count{background:rgba(99,102,241,.15);color:#a5b4fc;font-size:12px;padding:2px 10px;border-radius:99px;font-weight:500}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:24px;backdrop-filter:blur(8px)}
+/* ─── POSTURE ─── */
+.posture-row{display:flex;gap:16px;flex-wrap:wrap}
+.posture-item{display:flex;align-items:center;gap:12px;padding:16px 20px;border-radius:12px;background:rgba(15,23,42,.5);border:1px solid rgba(255,255,255,.04);flex:1;min-width:180px}
+.posture-item .pi-icon{font-size:24px}
+.posture-item .pi-label{font-size:12px;color:#64748b}
+.posture-item .pi-value{font-size:15px;font-weight:600;margin-top:2px}
+.status-good{color:#22c55e}
+.status-bad{color:#ef4444}
+.status-warn{color:#f59e0b}
+/* ─── RESOURCE GRID ─── */
+.res-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.res-card{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);
+  border-radius:16px;padding:24px;cursor:pointer;transition:all .3s;
+  position:relative;overflow:hidden
+}
+.res-card:hover{transform:translateY(-4px);border-color:rgba(99,102,241,.3);box-shadow:0 12px 30px rgba(0,0,0,.3)}
+.res-card:active{transform:translateY(-1px)}
+.res-card .rc-icon{font-size:32px;color:#818cf8;margin-bottom:14px;display:block}
+.res-card .rc-name{font-size:16px;font-weight:600;margin-bottom:6px}
+.res-card .rc-desc{font-size:13px;color:#64748b;line-height:1.5}
+.res-card .rc-badge{
+  display:inline-block;margin-top:14px;padding:4px 12px;border-radius:99px;
+  font-size:11px;font-weight:600;background:rgba(34,197,94,.12);color:#86efac
+}
+.res-card .rc-hover{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(15,23,42,.85);backdrop-filter:blur(4px);
+  opacity:0;transition:opacity .25s;border-radius:16px;
+  flex-direction:column;gap:12px
+}
+.res-card:hover .rc-hover{opacity:1}
+.rc-hover i{font-size:28px;color:#818cf8}
+.rc-hover span{font-size:13px;color:#94a3b8}
+/* ─── EMPTY STATE ─── */
+.empty-state{text-align:center;padding:60px 20px;color:#475569}
+.empty-state i{font-size:48px;margin-bottom:16px;opacity:.4}
+.empty-state h3{color:#64748b;margin-bottom:8px;font-size:18px}
+.empty-state p{font-size:14px}
+/* ─── MODAL ─── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);
+  display:none;align-items:center;justify-content:center;z-index:999
+}
+.modal-overlay.show{display:flex}
+.modal-box{
+  background:#1b1b3a;border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;padding:32px;width:440px;max-width:90vw;animation:fadeUp .25s ease-out
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px) scale(.97)}}
+.modal-box h3{font-size:18px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.modal-box p{color:#94a3b8;font-size:14px;margin-bottom:16px;line-height:1.5}
+.modal-actions{display:flex;gap:12px;margin-top:20px;justify-content:end}
+.modal-actions .btn{min-width:100px;justify-content:center}
+/* ─── ACCESS DENY ─── */
+.deny-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(12px);
+  display:none;align-items:center;justify-content:center;z-index:998
+}
+.deny-overlay.show{display:flex}
+.deny-box{text-align:center;animation:shake .4s}
+.deny-box i{font-size:56px;color:#ef4444;margin-bottom:16px}
+.deny-box h2{color:#fca5a5;font-size:22px;margin-bottom:8px}
+.deny-box p{color:#94a3b8;font-size:14px}
+.deny-box .btn{margin-top:20px}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.btn{
+  padding:10px 20px;border:none;border-radius:10px;font-size:14px;font-weight:600;
+  cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px
+}
+.btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 15px rgba(99,102,241,.3)}
+.btn-soft{background:rgba(99,102,241,.12);color:#a5b4fc}
+.btn-soft:hover{background:rgba(99,102,241,.2)}
+.btn-sm{padding:7px 14px;font-size:12px;border-radius:8px}
+.btn-success{background:rgba(34,197,94,.15);color:#86efac}
+.btn-success:hover{background:rgba(34,197,94,.25)}
+.btn-block{width:100%;justify-content:center}
+.mfa-setup{background:rgba(15,23,42,.4);border-radius:12px;padding:20px;margin:16px 0;text-align:center}
+.mfa-secret{font-family:'SF Mono','Fira Code','Courier New',monospace;font-size:16px;letter-spacing:2px;color:#a5b4fc;background:rgba(0,0,0,.3);padding:10px 16px;border-radius:8px;display:inline-block;margin:10px 0;user-select:all}
+.form-row{display:flex;gap:12px;align-items:center;margin:16px 0}
+.form-row input{flex:1;padding:12px 16px;background:rgba(15,23,42,.6);border:1px solid rgba(148,163,184,.12);border-radius:10px;color:#e2e8f0;font-size:16px;text-align:center;letter-spacing:4px;outline:none;transition:border-color .2s}
+.form-row input:focus{border-color:#818cf8;box-shadow:0 0 0 2px rgba(99,102,241,.15)}
+.form-row input.shake{animation:shake .3s;border-color:#ef4444}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(148,163,184,.15);border-radius:99px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <i class="fa-solid fa-shield-halved"></i>
+    <div><h1>Employee Vault <span>&middot; IAM Gateway</span></h1></div>
+  </div>
+  <div class="topbar-right">
+    <span class="user-badge"><i class="fa-solid fa-user"></i> <span id="topUser">&mdash;</span></span>
+    <a href="#" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+  </div>
+</div>
+
+<div class="container">
+  <!-- ─── POSTURE ─── -->
+  <div class="section">
+    <div class="section-header">
+      <h2><i class="fa-solid fa-shield"></i> Device Posture</h2>
+    </div>
+    <div class="card">
+      <div class="posture-row" id="postureRow"></div>
+    </div>
+  </div>
+
+  <!-- ─── RESOURCES ─── -->
+  <div class="section">
+    <div class="section-header">
+      <h2><i class="fa-solid fa-folder-open"></i> Authorized Resources <span class="count" id="resCount">0</span></h2>
+    </div>
+    <div id="resourceGrid" class="res-grid"></div>
+  </div>
+</div>
+
+<!-- ─── ACCESS DENY MODAL ─── -->
+<div class="deny-overlay" id="denyOverlay">
+  <div class="deny-box">
+    <i class="fa-solid fa-ban"></i>
+    <h2>Access Denied</h2>
+    <p id="denyReason">No Admin Authorization Key</p>
+    <button class="btn btn-primary" onclick="document.getElementById('denyOverlay').classList.remove('show')"><i class="fa-solid fa-arrow-left"></i> Back to Vault</button>
+  </div>
+</div>
+
+<!-- ─── RESOURCE DETAIL MODAL ─── -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-box" id="detailContent">
+    <h3><i class="fa-solid fa-circle-info" style="color:#818cf8"></i> <span id="detailName"></span></h3>
+    <p id="detailDesc"></p>
+    <p id="detailPolicy" style="font-size:13px;margin-bottom:12px"></p>
+    <div class="modal-actions">
+      <button class="btn btn-soft" onclick="closeDetail()">Close</button>
+      <button class="btn btn-primary" id="accessBtn" onclick=""><i class="fa-solid fa-unlock"></i> Request Access</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── RESOURCE DATA MODAL ─── -->
+<div class="modal-overlay" id="dataModal">
+  <div class="modal-box" style="width:700px;max-width:92vw">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3><i class="fa-solid fa-database" style="color:#22c55e"></i> <span id="dataModalTitle">Resource</span></h3>
+      <button class="btn btn-soft btn-sm" onclick="closeDataModal()"><i class="fa-solid fa-xmark"></i> Close</button>
+    </div>
+    <div style="max-height:400px;overflow:auto" id="dataModalBody">
+      <div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><br>Loading data...</div>
+    </div>
+  </div>
+</div>
+
+<style>
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{text-align:left;padding:10px 12px;color:#64748b;font-weight:500;border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:0;background:#1b1b3a}
+.data-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.03);color:#cbd5e1}
+.data-table tr:hover td{background:rgba(99,102,241,.05)}
+.data-table .status-approved{color:#22c55e}
+.data-table .status-pending{color:#f59e0b}
+.data-table .status-paid{color:#22c55e}
+.data-table .status-processing{color:#818cf8}
+.data-table .status-failed{color:#ef4444}
+.data-table .status-passed{color:#22c55e}
+.data-table .status-running{color:#818cf8}
+.data-table .status-queued{color:#64748b}
+.data-table .status-active{color:#22c55e}
+.data-table .status-probation{color:#f59e0b}
+.data-table .status-expiring{color:#ef4444}
+.data-table .status-maintenance{color:#f59e0b}
+</style>
+
+<!-- ─── MFA MODAL ─── -->
+<div class="modal-overlay" id="mfaModal">
+  <div class="modal-box">
+    <h3><i class="fa-solid fa-shield-halved" style="color:#f59e0b"></i> MFA Challenge</h3>
+    <p>Enter the 6-digit code from your authenticator app to proceed.</p>
+    <div id="mfaSetupArea"></div>
+    <div class="form-row">
+      <input id="mfaToken" placeholder="000000" maxlength="6" inputmode="numeric" pattern="[0-9]*">
+      <button class="btn btn-primary" onclick="verifyMFA()"><i class="fa-solid fa-check"></i> Verify</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-soft" onclick="closeMFA()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let resources=[],posture=null,pendingResource=null,username='',vpnIp='',role='';
+const token=localStorage.getItem('iam_token');
+if(!token){window.location.href='/login'}
+
+async function api(path,method,body){
+  const r=await fetch(path,{method,headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME'},body:body?JSON.stringify(body):undefined});
+  if(!r.ok){const d=await r.json();throw new Error(d.detail||'Request failed')}
+  return r.json()
+}
+
+async function loadAll(){
+  // Verify session
+  try{const s=await api('/api/auth/session','POST',{token});username=s.username;role=s.role;vpnIp=s.vpn_ip;document.getElementById('topUser').textContent=username}catch(e){localStorage.clear();window.location.href='/login';return}
+  // Load posture
+  posture=await api('/api/posture/'+encodeURIComponent(vpnIp),'GET')
+  renderPosture();
+  // Load resource catalog + user data
+  const rd=await api('/api/resources','GET');
+  resources=Object.entries(rd.catalog);
+  renderResources()
+}
+
+function renderPosture(){
+  const row=document.getElementById('postureRow');
+  const fw=posture.firewall,comp=posture.compliant;
+  row.innerHTML=`
+    <div class="posture-item">
+      <i class="fa-solid fa-laptop pi-icon ${comp?'status-good':'status-warn'}"></i>
+      <div><div class="pi-label">Operating System</div><div class="pi-value">${posture.os}</div></div>
+    </div>
+    <div class="posture-item">
+      <i class="fa-solid fa-shield-halved pi-icon ${fw==='Active'?'status-good':'status-bad'}"></i>
+      <div><div class="pi-label">Firewall</div><div class="pi-value ${fw==='Active'?'status-good':'status-bad'}">${fw}</div></div>
+    </div>
+    <div class="posture-item">
+      <i class="fa-solid ${comp?'fa-circle-check status-good':'fa-circle-exclamation status-bad'} pi-icon"></i>
+      <div><div class="pi-label">Compliance</div><div class="pi-value ${comp?'status-good':'status-bad'}">${comp?'Compliant':'Non-Compliant'}</div></div>
+    </div>
+  `
+}
+
+function renderResources(){
+  const grid=document.getElementById('resourceGrid');
+  const cat=resources;
+  // Get user's allowed resources from session
+  // We need to re-fetch from status
+  api('/api/status','GET').then(d=>{
+    const user=d.users?.[username];
+    const allowed=user?.allowed_resources||[];
+    document.getElementById('resCount').textContent=allowed.length;
+    if(!allowed.length){grid.innerHTML='<div class="empty-state"><i class="fa-solid fa-lock"></i><h3>No resources available</h3><p>Contact your administrator to get resource access.</p></div>';return}
+    grid.innerHTML=allowed.map(id=>{
+      const r=cat.find(([k])=>k===id);
+      if(!r)return '';
+      const v=r[1];
+      return `<div class="res-card" onclick="openResource('${id}')">
+        <i class="${v.icon} rc-icon"></i>
+        <div class="rc-name">${v.name}</div>
+        <div class="rc-desc">${v.desc}</div>
+        <span class="rc-badge"><i class="fa-solid fa-lock-open"></i> Authorized</span>
+        <div class="rc-hover"><i class="fa-solid fa-arrow-right-to-bracket"></i><span>Click to access</span></div>
+      </div>`
+    }).join('')
+  })
+}
+
+async function openResource(id){
+  pendingResource=id;
+  const r=resources.find(([k])=>k===id);
+  if(!r)return;
+  const v=r[1];
+  document.getElementById('detailName').textContent=v.name;
+  document.getElementById('detailDesc').textContent=v.desc;
+  document.getElementById('detailContent').querySelector('h3 i').className=v.icon+' rc-icon';
+  const p=document.getElementById('detailPolicy');
+  p.innerHTML='<i class="fa-solid fa-hourglass-half" style="color:#f59e0b"></i> Evaluating policy...';
+  document.getElementById('detailModal').classList.add('show');
+  document.getElementById('accessBtn').onclick=()=>requestAccess(id);
+  // Pre-evaluate
+  try{
+    const d=await api('/api/resource/evaluate-access','POST',{username,resource_id:id});
+    if(d.policy==='ALLOW'){
+      p.innerHTML='<i class="fa-solid fa-check-circle" style="color:#22c55e"></i> Policy: <strong style="color:#86efac">ALLOW</strong> &mdash; Access granted';
+      document.getElementById('accessBtn').innerHTML='<i class="fa-solid fa-unlock"></i> Open Resource';
+      document.getElementById('accessBtn').className='btn btn-success';
+    }else if(d.policy==='CHALLENGE_MFA'){
+      p.innerHTML='<i class="fa-solid fa-shield-halved" style="color:#f59e0b"></i> Policy: <strong style="color:#fde68a">CHALLENGE MFA</strong> &mdash; Firewall is disabled, MFA required';
+      document.getElementById('accessBtn').onclick=()=>{closeDetail();openMFA(id)};
+      document.getElementById('accessBtn').innerHTML='<i class="fa-solid fa-shield-halved"></i> Verify MFA';
+      document.getElementById('accessBtn').className='btn btn-warning';
+    }
+  }catch(e){
+    p.innerHTML='<i class="fa-solid fa-ban" style="color:#ef4444"></i> Policy: <strong style="color:#fca5a5">DENY</strong> &mdash; '+e.message;
+    document.getElementById('accessBtn').innerHTML='<i class="fa-solid fa-lock"></i> Access Denied';
+    document.getElementById('accessBtn').disabled=true;
+    document.getElementById('accessBtn').className='btn btn-soft';
+  }
+}
+
+function renderDataTable(data){
+  if(!data||!data.columns||!data.rows)return '<div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><br>No data available</div>';
+  let html='<table class="data-table"><thead><tr>';
+  data.columns.forEach(c=>{html+=`<th>${c}</th>`});
+  html+='</tr></thead><tbody>';
+  data.rows.forEach(row=>{
+    html+='<tr>';
+    row.forEach((cell,i)=>{
+      const cls=i===row.length-1?` status-${cell.toLowerCase().replace(/[^a-z]/g,'')}`:'';
+      html+=`<td class="${cls}">${cell}</td>`
+    });
+    html+='</tr>'
+  });
+  html+='</tbody></table>';
+  return html
+}
+
+async function showResourceData(id){
+  try{
+    document.getElementById('dataModalTitle').textContent='Loading...';
+    document.getElementById('dataModalBody').innerHTML='<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><br>Loading data...</div>';
+    document.getElementById('dataModal').classList.add('show');
+    const d=await api(`/api/resource/${id}/data?username=${encodeURIComponent(username)}`,'GET');
+    document.getElementById('dataModalTitle').textContent=d.data.title||id;
+    document.getElementById('dataModalBody').innerHTML=renderDataTable(d.data)
+  }catch(e){
+    document.getElementById('dataModalTitle').textContent='Error';
+    document.getElementById('dataModalBody').innerHTML=`<div class="empty-state"><i class="fa-solid fa-ban" style="color:#ef4444"></i><br>${e.message}</div>`
+  }
+}
+
+function closeDataModal(){document.getElementById('dataModal').classList.remove('show')}
+document.getElementById('dataModal').addEventListener('click',function(e){if(e.target===this)closeDataModal()})
+
+async function requestAccess(id){
+  try{
+    const d=await api('/api/resource/evaluate-access','POST',{username,resource_id:id});
+    if(d.policy==='ALLOW'){
+      closeDetail();
+      showResourceData(id)
+    }
+  }catch(e){
+    closeDetail();
+    document.getElementById('denyOverlay').querySelector('h2').textContent='Access Denied';
+    document.getElementById('denyOverlay').querySelector('i').className='fa-solid fa-ban';
+    document.getElementById('denyOverlay').querySelector('i').style.color='#ef4444';
+    document.getElementById('denyReason').textContent=e.message;
+    document.getElementById('denyOverlay').classList.add('show')
+  }
+}
+
+// ─── MFA ───
+let mfaResource=null;
+
+async function openMFA(resourceId){
+  mfaResource=resourceId;
+  // Check if we need to provision
+  try{const s=await api('/api/mfa/provision?username='+encodeURIComponent(username),'POST');document.getElementById('mfaSetupArea').innerHTML='<div class="mfa-setup"><i class="fa-solid fa-qrcode" style="font-size:28px;color:#818cf8;margin-bottom:10px"></i><p style="font-size:13px;margin-bottom:8px">Scan this secret in your authenticator app:</p><div class="mfa-secret" onclick="navigator.clipboard.writeText(this.textContent)">'+s.secret+'</div><p style="font-size:11px;color:#475569;margin-top:6px">Click to copy</p></div>'}catch(e){}
+  document.getElementById('mfaModal').classList.add('show');
+  document.getElementById('mfaToken').value='';
+  document.getElementById('mfaToken').focus()
+}
+
+function closeMFA(){document.getElementById('mfaModal').classList.remove('show')}
+
+async function verifyMFA(){
+  const t=document.getElementById('mfaToken').value.trim();
+  if(t.length!==6)return;
+  const input=document.getElementById('mfaToken');
+  try{
+    await api('/api/mfa/verify','POST',{username,token:t});
+    closeMFA();
+    if(mfaResource){
+      try{
+        await api('/api/resource/evaluate-access','POST',{username,resource_id:mfaResource});
+        showResourceData(mfaResource)
+      }catch(e){}
+    }
+  }catch(e){
+    input.classList.add('shake');
+    input.value='';
+    setTimeout(()=>input.classList.remove('shake'),400);
+    input.focus()
+  }
+}
+
+function closeDetail(){document.getElementById('detailModal').classList.remove('show')}
+
+async function logout(){
+  try{await api('/api/auth/logout','POST',{token})}catch(e){}
+  localStorage.clear();
+  window.location.href='/login'
+}
+
+// ─── INIT ───
+loadAll()
+</script>
+</body>
+</html>

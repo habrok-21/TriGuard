@@ -1,0 +1,84 @@
+dn: ou=Users,dc=corp,dc=local
+objectClass: organizationalUnit
+ou: Users
+
+dn: ou=Groups,dc=corp,dc=local
+objectClass: organizationalUnit
+ou: Groups
+
+# ─── USERS ──────────────────────────────────────────
+
+dn: uid=jay,ou=Users,dc=corp,dc=local
+objectClass: inetOrgPerson
+uid: jay
+cn: Jay
+sn: Jay
+userPassword: CHANGE_ME
+displayName: Jay
+mail: jay@CHANGE_ME.local
+
+dn: uid=luffy,ou=Users,dc=corp,dc=local
+objectClass: inetOrgPerson
+uid: luffy
+cn: Luffy
+sn: Luffy
+userPassword: CHANGE_ME
+displayName: Luffy
+mail: luffy@CHANGE_ME.local
+
+dn: uid=zoro,ou=Users,dc=corp,dc=local
+objectClass: inetOrgPerson
+uid: zoro
+cn: Zoro
+sn: Zoro
+userPassword: CHANGE_ME
+displayName: Zoro
+mail: zoro@CHANGE_ME.local
+
+dn: uid=ace,ou=Users,dc=corp,dc=local
+objectClass: inetOrgPerson
+uid: ace
+cn: Ace
+sn: Ace
+userPassword: CHANGE_ME
+displayName: Ace
+mail: ace@CHANGE_ME.local
+
+# ─── GROUPS ─────────────────────────────────────────
+
+dn: cn=Finance,ou=Groups,dc=corp,dc=local
+objectClass: groupOfNames
+cn: Finance
+member: uid=ace,ou=Users,dc=corp,dc=local
+member: uid=shanks,ou=Users,dc=corp,dc=local
+
+dn: cn=HR,ou=Groups,dc=corp,dc=local
+objectClass: groupOfNames
+cn: HR
+member: uid=ash,ou=Users,dc=corp,dc=local
+
+dn: cn=Marketing,ou=Groups,dc=corp,dc=local
+objectClass: groupOfNames
+cn: Marketing
+member: uid=brock,ou=Users,dc=corp,dc=local
+
+dn: cn=Sales,ou=Groups,dc=corp,dc=local
+objectClass: groupOfNames
+cn: Sales
+member: uid=sanji,ou=Users,dc=corp,dc=local
+
+dn: cn=Operations,ou=Groups,dc=corp,dc=local
+objectClass: groupOfNames
+cn: Operations
+member: uid=zoro,ou=Users,dc=corp,dc=local
+
+dn: cn=Management,ou=Groups,dc=corp,dc=local
+objectClass: groupOfNames
+cn: Management
+member: uid=kido,ou=Users,dc=corp,dc=local
+
+dn: cn=IT_Security,ou=Groups,dc=corp,dc=local
+objectClass: groupOfNames
+cn: IT_Security
+member: uid=luffy,ou=Users,dc=corp,dc=local
+member: uid=jay,ou=Users,dc=corp,dc=local

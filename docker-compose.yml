@@ -1,0 +1,89 @@
+services:
+  openldap:
+    build: ./ldap
+    hostname: openldap
+    environment:
+      LDAP_ORGANISATION: "Corp"
+      LDAP_DOMAIN: "CHANGE_ME.local"
+      LDAP_ADMIN_PASSWORD: "CHANGE_ME"
+    ports:
+      - "389:389"
+      - "636:636"
+    volumes:
+      - ldap_data:/var/lib/ldap
+      - ldap_config:/etc/ldap/slapd.d
+    healthcheck:
+      test: ["CMD-SHELL", "ldapsearch -x -H ldap://localhost:389 -b dc=CHANGE_ME,dc=local -D cn=admin,dc=CHANGE_ME,dc=local -w $$LDAP_ADMIN_PASSWORD uid=admin | grep -q 'dn: uid=admin'"]
+      interval: 5s
+      retries: 15
+      start_period: 10s
+
+  gateway:
+    build: .
+    hostname: gateway
+    ports:
+      - "8443:8443"
+    environment:
+      API_SECRET_KEY: "CHANGE_ME"
+      LDAP_SERVER: "ldap://openldap:389"
+      LDAP_BASE_DN: "dc=CHANGE_ME,dc=local"
+      LDAP_DOMAIN: "CHANGE_ME"
+      LDAP_USER_ATTR: "uid"
+      LDAP_BIND_DN: "cn=admin,dc=CHANGE_ME,dc=local"
+      LDAP_BIND_PASSWORD: "CHANGE_ME"
+      AD_VALIDATE_CERT: "false"
+      AD_USE_STARTTLS: "false"
+      PROXY_ROUTES: >
+        [{"prefix":"/accounting","backend":"http://accounting-api:8000","resource":"accounting_db"}]
+      SMTP_HOST: "smtp.gmail.com"
+      SMTP_PORT: "587"
+      SMTP_USERNAME: "CHANGE_ME"
+      SMTP_PASSWORD: "CHANGE_ME"
+      SMTP_FROM: "CHANGE_ME@CHANGE_ME.local"
+      ADMIN_EMAIL: "CHANGE_ME@CHANGE_ME.local"
+    depends_on:
+      openldap:
+        condition: service_healthy
+    volumes:
+      - .:/app
+
+  # Example backend service - replace with your actual internal apps
+  accounting-api:
+    image: python:3.11-slim
+    hostname: accounting-api
+    command: |
+      sh -c "
+      pip install fastapi uvicorn -q
+      cat << 'PYEOF' > /app.py
+      from fastapi import FastAPI, Request
+      app = FastAPI()
+      @app.api_route('/{path:path}', methods=['GET','POST','PUT','DELETE','PATCH'])
+      async def catch_all(request: Request, path: str):
+          return {'service': 'Accounting API', 'path': '/' + path, 'method': request.method, 'headers': dict(request.headers)}
+      PYEOF
+      uvicorn app:app --host 0.0.0.0 --port 8000
+      "
+    ports:
+      - "8001:8000"
+
+  wireguard:
+    image: linuxserver/wireguard:latest
+    hostname: wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - ./wireguard:/config
+    ports:
+      - "51820:51820/udp"
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.ip_forward=1
+    restart: unless-stopped
+
+volumes:
+  ldap_data:
+  ldap_config:

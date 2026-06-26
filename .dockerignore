@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+.DS_Store
+.git
+ldap
+wireguard
+docker-compose.yml
+Dockerfile
+Makefile
+README.md

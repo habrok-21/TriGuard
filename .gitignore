@@ -1,0 +1,31 @@
+# Database files (contain live secrets like MFA keys, password hashes, sessions)
+store.db
+store.db-shm
+store.db-wal
+
+# Python bytecode cache
+__pycache__/
+*.pyc
+
+# macOS metadata
+.DS_Store
+._*
+.DocumentRevisions-V100/
+
+# IDE / editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment / secrets file
+.env
+.env.local
+*.env
+
+# Generated PDF documentation
+*.pdf
+
+# Potential generated data file
+store_data.json
