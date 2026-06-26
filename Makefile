@@ -58,4 +58,13 @@ cli:
 	 read -p "Action (reset-mfa / reset-backup-codes / change-password): " a; \
 	 docker exec -it wireguardproject-gateway-1 python /app/manage_users.py --$${a} $${u}
 
-.PHONY: lock unlock up down restart logs db db-full destroy cli guard
+# ─── Configuration Check ───────────────────────────────────────────
+check-config:
+	@echo "╔══════════════════════════════════════════════════════════════╗"
+	@echo "║           Remaining CHANGE_ME placeholders                  ║"
+	@echo "╚══════════════════════════════════════════════════════════════╝"
+	@grep -rn "CHANGE_ME" --include='*.py' --include='*.html' --include='*.yml' --include='*.yaml' --include='*.ldif' --include='*.conf' --include='*.sh' --include='*.md' . 2>/dev/null | grep -v 'node_modules/' | grep -v '.git/' | grep -v '__pycache__/' || echo "None found — all configured!"
+	@echo ""
+	@echo "Docs: see DEPLOYMENT.md for details on each setting."
+
+.PHONY: lock unlock up down restart logs db db-full destroy cli guard check-config
