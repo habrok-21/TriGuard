@@ -303,11 +303,11 @@ class PeerStore:
             self._conn.commit()
 
     def _seed_default_admin(self):
-        hashed = bcrypt.hashpw(b"CHANGE_ME", bcrypt.gensalt()).decode("utf-8")
+        hashed = bcrypt.hashpw(b"CHANGE_ME", bcrypt.gensalt()).decode("utf-8")  # ⚠️ CHANGE_ME — replace before deploying
         self._conn.execute(
             "INSERT OR IGNORE INTO users (username, password, role, vpn_ip, email, allowed_resources) "
             "VALUES (?, ?, ?, ?, ?, ?)",
-            ("admin", hashed, "admin", "10.0.0.1", "admin@CHANGE_ME.local", json.dumps(list(RESOURCE_CATALOG.keys()))),
+            ("admin", hashed, "admin", "10.0.0.1", "admin@CHANGE_ME.local", json.dumps(list(RESOURCE_CATALOG.keys()))),  # ⚠️ CHANGE_ME — replace before deploying
         )
         self._ensure_posture("admin", "10.0.0.1")
 
@@ -382,7 +382,7 @@ class PeerStore:
         )
 
     def _save(self):
-        pass
+        self._conn.commit()
 
     def add_log(self, status: str, message: str):
         self._conn.execute(
@@ -459,11 +459,6 @@ class PeerStore:
                 json.dumps(default_resources),
             ),
         )
-        if vpn_ip:
-            self._conn.execute(
-                "INSERT OR IGNORE INTO device_posture (vpn_ip) VALUES (?)",
-                (vpn_ip,),
-            )
         self._conn.commit()
         return self.get_user(username) or ldap_data
 

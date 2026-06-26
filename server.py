@@ -150,7 +150,7 @@ async def verify_api_key(x_api_key: str = Header(None)):
 
 
 class LoginRequest(BaseModel): username: str; password: str
-class CreateUserRequest(BaseModel): username: str; password: str; vpn_ip: str; role: str
+class CreateUserRequest(BaseModel): username: str; password: str; vpn_ip: str; role: str; email: str = ""
 class ModifyPermRequest(BaseModel): username: str; resource_id: str; action: str
 class AccessRequest(BaseModel): username: str; resource_id: str
 class MFAVerifyRequest(BaseModel): username: str; token: str
@@ -194,7 +194,7 @@ MFA_TOKEN_EXPIRY = 600  # 10 minutes
 
 
 def _ldap_user_dn(username: str) -> str:
-    base = os.environ.get("LDAP_BASE_DN", "dc=CHANGE_ME,dc=local")
+    base = os.environ.get("LDAP_BASE_DN", "dc=CHANGE_ME,dc=local")  # ⚠️ CHANGE_ME — replace before deploying
     return f"uid={username},ou=Users,{base}"
 
 
@@ -370,7 +370,7 @@ SMTP_HOST = os.environ.get("SMTP_HOST", "")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USERNAME = os.environ.get("SMTP_USERNAME", "")
 SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
-SMTP_FROM = os.environ.get("SMTP_FROM", "CHANGE_ME@CHANGE_ME.local")
+SMTP_FROM = os.environ.get("SMTP_FROM", "CHANGE_ME@CHANGE_ME.local")  # ⚠️ CHANGE_ME — replace before deploying
 SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "true").lower() in ("1", "true", "yes")
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "")
 
@@ -444,8 +444,6 @@ def _check_password(stored: str, provided: str) -> bool:
         return bcrypt.checkpw(provided.encode("utf-8"), stored.encode("utf-8"))
     return stored == provided
 
-
-_PASSWORD_REGEX = re.compile(r"^(?=.*[A-Z])(?=.*\d).{8,50}$")
 
 
 def _validate_password_strength(password: str) -> Optional[str]:
@@ -801,6 +799,10 @@ async def change_password(request: Request, old_password: str = Body(...), new_p
 async def verify_session(req: SessionToken):
     entry = store.get_session(req.token)
     if not entry:
+        for username, s in list(ACTIVE_SESSIONS.items()):
+            if s.get("token") == req.token:
+                ACTIVE_SESSIONS.pop(username, None)
+                break
         raise HTTPException(status_code=401, detail="Session expired or invalid")
     user = store.get_user(entry["username"])
     if not user:
@@ -849,7 +851,7 @@ async def admin_create_user(req: CreateUserRequest):
     _ldap_sync_create_user(
         username=req.username,
         password=req.password,
-        email=req.username,
+        email=req.email or req.username,
         display_name=req.username,
     )
     store.create_user(req.username, hashed, req.vpn_ip, req.role)
@@ -870,6 +872,7 @@ async def admin_modify_permissions(req: ModifyPermRequest):
         store.add_log("ADMIN", f"Revoked {req.resource_id} <- '{req.username}'")
     else:
         raise HTTPException(status_code=400, detail="Action must be 'grant' or 'revoke'")
+    user = store.get_user(req.username)
     return {"status": "updated", "allowed_resources": user["allowed_resources"]}
 
 

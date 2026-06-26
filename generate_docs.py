@@ -463,7 +463,7 @@ doc.sub_title("Open the Login Page")
 doc.code_block("open http://localhost:8443")
 
 doc.sub_title("Login as Admin")
-doc.code_block("Username: admin   Password: CHANGE_ME")
+doc.code_block("Username: admin   Password: CHANGE_ME")  # ⚠️ CHANGE_ME — replace before deploying
 
 doc.sub_title("Stop Everything")
 doc.code_block("make down")
@@ -563,7 +563,7 @@ doc.section_title("9", "User Accounts and Roles")
 
 doc.sub_title("Default Admin Account")
 doc.code_block("Username: admin")
-doc.code_block("Password: CHANGE_ME")
+doc.code_block("Password: CHANGE_ME")  # ⚠️ CHANGE_ME — replace before deploying
 doc.body(
     "The admin has full access: create/delete users, view MFA keys, "
     "reset passwords, clear logs, see all active sessions, and provision MFA for anyone."
@@ -574,10 +574,10 @@ doc.body("These users are imported from the LDAP directory for testing:")
 
 # User table as boxes
 us = [
-    ("jay", "CHANGE_ME",  "IT Security", "5 resources"),
-    ("luffy", "CHANGE_ME", "IT Security", "2 resources"),
-    ("zoro", "CHANGE_ME",  "Operations",  "2 resources"),
-    ("ace", "CHANGE_ME",   "Finance",     "3 resources"),
+    ("jay", "CHANGE_ME",  "IT Security", "5 resources"),   # ⚠️ CHANGE_ME — replace before deploying
+    ("luffy", "CHANGE_ME", "IT Security", "2 resources"),  # ⚠️ CHANGE_ME — replace before deploying
+    ("zoro", "CHANGE_ME",  "Operations",  "2 resources"),  # ⚠️ CHANGE_ME — replace before deploying
+    ("ace", "CHANGE_ME",   "Finance",     "3 resources"),  # ⚠️ CHANGE_ME — replace before deploying
 ]
 y = doc.get_y() + 2
 doc.set_font("Helvetica", "B", 9)

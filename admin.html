@@ -212,6 +212,7 @@ body{background:#0b0b1a;color:#e2e8f0;min-height:100vh}
           <div class="fg"><label>Username</label><input id="newUser" placeholder="e.g. jdoe"></div>
           <div class="fg"><label>Password</label><input id="newPass" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"></div>
           <div class="fg"><label>VPN IP</label><input id="newIP" value="10.0.0."></div>
+          <div class="fg"><label>Email</label><input id="newEmail" type="email" placeholder="user@example.com"></div>
           <div class="fg"><label>Department</label><select id="newRole"></select></div>
           <button class="btn btn-primary" onclick="createUser()"><i class="fa-solid fa-plus"></i> Create</button>
         </div>
@@ -373,7 +374,7 @@ const token=localStorage.getItem('iam_token');
 if(!token){window.location.href='/login'}
 
 async function api(path,method,body){
-  const r=await fetch(path,{method,headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME',...(!body?{}:{})},body:body?JSON.stringify(body):undefined});
+  const r=await fetch(path,{method,headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME',...(!body?{}:{})},body:body?JSON.stringify(body):undefined});  // ⚠️ CHANGE_ME — replace before deploying
   if(!r.ok){const d=await r.json();throw new Error(d.detail||'Request failed')}
   return r.json()
 }
@@ -484,19 +485,21 @@ async function togglePerm(name,res,currentlyOn){
   renderMatrix(d.users)
 }
 
+// ─── LDAP SYNC ───
+async function syncLDAP(){
+  try{const d=await api('/api/admin/ldap-sync','POST');alert('LDAP sync completed');loadAll()}catch(e){alert(e.message)}
+}
+
 // ─── CREATE ───
 async function createUser(){
   const u=document.getElementById('newUser').value.trim(),p=document.getElementById('newPass').value;
   const ip=document.getElementById('newIP').value.trim(),r=document.getElementById('newRole').value;
+  const em=document.getElementById('newEmail').value.trim();
   if(!u||!p||!ip)return alert('Fill all fields');
   if(p.length<8||!/[A-Z]/.test(p)||!/\d/.test(p))return alert('Password: min 8 chars, 1 uppercase, 1 digit');
-
-async function syncLDAP(){
-  try{const d=await api('/api/admin/ldap-sync','POST');alert('LDAP sync completed');loadAll()}catch(e){alert(e.message)}
-}
   try{
-    await api('/api/admin/create-user','POST',{username:u,password:p,vpn_ip:ip,role:r});
-    document.getElementById('newUser').value='';document.getElementById('newPass').value='';
+    await api('/api/admin/create-user','POST',{username:u,password:p,vpn_ip:ip,role:r,email:em});
+    document.getElementById('newUser').value='';document.getElementById('newPass').value='';document.getElementById('newEmail').value='';
     const d=await api('/api/admin/users','GET');renderMatrix(d.users);
     loadLogs()
   }catch(e){alert(e.message)}

@@ -228,7 +228,7 @@ const token=localStorage.getItem('iam_token');
 if(!token){window.location.href='/login'}
 
 async function api(path,method,body){
-  const r=await fetch(path,{method,headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME'},body:body?JSON.stringify(body):undefined});
+  const r=await fetch(path,{method,headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME'},body:body?JSON.stringify(body):undefined});  // ⚠️ CHANGE_ME — replace before deploying
   if(!r.ok){const d=await r.json();throw new Error(d.detail||'Request failed')}
   return r.json()
 }
@@ -379,7 +379,7 @@ let mfaResource=null;
 async function openMFA(resourceId){
   mfaResource=resourceId;
   // Check if we need to provision
-  try{const s=await api('/api/mfa/provision?username='+encodeURIComponent(username),'POST');document.getElementById('mfaSetupArea').innerHTML='<div class="mfa-setup"><i class="fa-solid fa-qrcode" style="font-size:28px;color:#818cf8;margin-bottom:10px"></i><p style="font-size:13px;margin-bottom:8px">Scan this secret in your authenticator app:</p><div class="mfa-secret" onclick="navigator.clipboard.writeText(this.textContent)">'+s.secret+'</div><p style="font-size:11px;color:#475569;margin-top:6px">Click to copy</p></div>'}catch(e){}
+  try{const s=await api('/api/mfa/provision?username='+encodeURIComponent(username),'POST');document.getElementById('mfaSetupArea').innerHTML='<div class="mfa-setup"><i class="fa-solid fa-qrcode" style="font-size:28px;color:#818cf8;margin-bottom:10px"></i><p style="font-size:13px;margin-bottom:8px">Scan this secret in your authenticator app:</p><div class="mfa-secret" onclick="navigator.clipboard.writeText(this.textContent)">'+s.secret+'</div><p style="font-size:11px;color:#475569;margin-top:6px">Click to copy</p></div>'}catch(e){document.getElementById('mfaSetupArea').innerHTML='<p style="color:#ef4444;font-size:13px">Contact your admin to set up MFA.</p>'}
   document.getElementById('mfaModal').classList.add('show');
   document.getElementById('mfaToken').value='';
   document.getElementById('mfaToken').focus()

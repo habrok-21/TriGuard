@@ -13,36 +13,36 @@ objectClass: inetOrgPerson
 uid: jay
 cn: Jay
 sn: Jay
-userPassword: CHANGE_ME
+userPassword: CHANGE_ME  # ⚠️ CHANGE_ME — replace before deploying
 displayName: Jay
-mail: jay@CHANGE_ME.local
+mail: jay@CHANGE_ME.local  # ⚠️ CHANGE_ME — replace before deploying
 
 dn: uid=luffy,ou=Users,dc=corp,dc=local
 objectClass: inetOrgPerson
 uid: luffy
 cn: Luffy
 sn: Luffy
-userPassword: CHANGE_ME
+userPassword: CHANGE_ME  # ⚠️ CHANGE_ME — replace before deploying
 displayName: Luffy
-mail: luffy@CHANGE_ME.local
+mail: luffy@CHANGE_ME.local  # ⚠️ CHANGE_ME — replace before deploying
 
 dn: uid=zoro,ou=Users,dc=corp,dc=local
 objectClass: inetOrgPerson
 uid: zoro
 cn: Zoro
 sn: Zoro
-userPassword: CHANGE_ME
+userPassword: CHANGE_ME  # ⚠️ CHANGE_ME — replace before deploying
 displayName: Zoro
-mail: zoro@CHANGE_ME.local
+mail: zoro@CHANGE_ME.local  # ⚠️ CHANGE_ME — replace before deploying
 
 dn: uid=ace,ou=Users,dc=corp,dc=local
 objectClass: inetOrgPerson
 uid: ace
 cn: Ace
 sn: Ace
-userPassword: CHANGE_ME
+userPassword: CHANGE_ME  # ⚠️ CHANGE_ME — replace before deploying
 displayName: Ace
-mail: ace@CHANGE_ME.local
+mail: ace@CHANGE_ME.local  # ⚠️ CHANGE_ME — replace before deploying
 
 # ─── GROUPS ─────────────────────────────────────────
 

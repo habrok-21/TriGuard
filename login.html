@@ -170,7 +170,7 @@ if(saved){username.value=saved;password.focus()}else username.focus();
   const t=localStorage.getItem('iam_token');
   if(!t)return;
   try{
-    const r=await fetch('/api/auth/session',{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME'},body:JSON.stringify({token:t})});
+    const r=await fetch('/api/auth/session',{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME'},body:JSON.stringify({token:t})});  // ⚠️ CHANGE_ME — replace before deploying
     if(r.ok){const d=await r.json();window.location.href=d.role==='admin'?'/admin':'/employee'}
   }catch(e){}
 })();
@@ -187,7 +187,7 @@ form.onsubmit=async function(e){
   e.preventDefault();hideError();
   btnText.textContent='';spinner.style.display='block';loginBtn.disabled=true;
   try{
-    const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME'},body:JSON.stringify({username:username.value.trim(),password:password.value})});
+    const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME'},body:JSON.stringify({username:username.value.trim(),password:password.value})});  // ⚠️ CHANGE_ME — replace before deploying
     if(!r.ok){const d=await r.json();throw new Error(d.detail||'Login failed')}
     const d=await r.json();
     if(d.mfa_required){
@@ -249,7 +249,7 @@ async function submitMFA(){
   }
   mfaBtnText.textContent='';mfaSpinner.style.display='block';mfaBtn.disabled=true;
   try{
-    const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME'},body});
+    const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME'},body});  // ⚠️ CHANGE_ME — replace before deploying
     if(!r.ok){const d=await r.json();throw new Error(d.detail||'Verification failed')}
     const d=await r.json();
 

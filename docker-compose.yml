@@ -4,8 +4,8 @@ services:
     hostname: openldap
     environment:
       LDAP_ORGANISATION: "Corp"
-      LDAP_DOMAIN: "CHANGE_ME.local"
-      LDAP_ADMIN_PASSWORD: "CHANGE_ME"
+      LDAP_DOMAIN: "CHANGE_ME.local"       # ⚠️ CHANGE_ME — replace before deploying
+      LDAP_ADMIN_PASSWORD: "CHANGE_ME"      # ⚠️ CHANGE_ME — replace before deploying
     ports:
       - "389:389"
       - "636:636"
@@ -13,7 +13,7 @@ services:
       - ldap_data:/var/lib/ldap
       - ldap_config:/etc/ldap/slapd.d
     healthcheck:
-      test: ["CMD-SHELL", "ldapsearch -x -H ldap://localhost:389 -b dc=CHANGE_ME,dc=local -D cn=admin,dc=CHANGE_ME,dc=local -w $$LDAP_ADMIN_PASSWORD uid=admin | grep -q 'dn: uid=admin'"]
+      test: ["CMD-SHELL", "ldapsearch -x -H ldap://localhost:389 -b dc=CHANGE_ME,dc=local -D cn=admin,dc=CHANGE_ME,dc=local -w $$LDAP_ADMIN_PASSWORD uid=admin | grep -q 'dn: uid=admin'"]  # ⚠️ CHANGE_ME — replace before deploying
       interval: 5s
       retries: 15
       start_period: 10s
@@ -24,23 +24,23 @@ services:
     ports:
       - "8443:8443"
     environment:
-      API_SECRET_KEY: "CHANGE_ME"
+      API_SECRET_KEY: "CHANGE_ME"           # ⚠️ CHANGE_ME — replace before deploying
       LDAP_SERVER: "ldap://openldap:389"
-      LDAP_BASE_DN: "dc=CHANGE_ME,dc=local"
-      LDAP_DOMAIN: "CHANGE_ME"
+      LDAP_BASE_DN: "dc=CHANGE_ME,dc=local" # ⚠️ CHANGE_ME — replace before deploying
+      LDAP_DOMAIN: "CHANGE_ME"               # ⚠️ CHANGE_ME — replace before deploying
       LDAP_USER_ATTR: "uid"
-      LDAP_BIND_DN: "cn=admin,dc=CHANGE_ME,dc=local"
-      LDAP_BIND_PASSWORD: "CHANGE_ME"
+      LDAP_BIND_DN: "cn=admin,dc=CHANGE_ME,dc=local"  # ⚠️ CHANGE_ME — replace before deploying
+      LDAP_BIND_PASSWORD: "CHANGE_ME"        # ⚠️ CHANGE_ME — replace before deploying
       AD_VALIDATE_CERT: "false"
       AD_USE_STARTTLS: "false"
       PROXY_ROUTES: >
         [{"prefix":"/accounting","backend":"http://accounting-api:8000","resource":"accounting_db"}]
       SMTP_HOST: "smtp.gmail.com"
       SMTP_PORT: "587"
-      SMTP_USERNAME: "CHANGE_ME"
-      SMTP_PASSWORD: "CHANGE_ME"
-      SMTP_FROM: "CHANGE_ME@CHANGE_ME.local"
-      ADMIN_EMAIL: "CHANGE_ME@CHANGE_ME.local"
+      SMTP_USERNAME: "CHANGE_ME"             # ⚠️ CHANGE_ME — replace before deploying
+      SMTP_PASSWORD: "CHANGE_ME"             # ⚠️ CHANGE_ME — replace before deploying
+      SMTP_FROM: "CHANGE_ME@CHANGE_ME.local" # ⚠️ CHANGE_ME — replace before deploying
+      ADMIN_EMAIL: "CHANGE_ME@CHANGE_ME.local"  # ⚠️ CHANGE_ME — replace before deploying
     depends_on:
       openldap:
         condition: service_healthy

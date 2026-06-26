@@ -184,7 +184,7 @@ async function submitOTP() {
   try {
     const r = await fetch('/api/auth/verify-email-otp', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-API-Key': 'CHANGE_ME' },
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': 'CHANGE_ME' },  // ⚠️ CHANGE_ME — replace before deploying
       body: JSON.stringify({ email_otp_token: emailOtpToken, otp: otp })
     });
     if (!r.ok) { const d = await r.json(); throw new Error(d.detail || 'Verification failed'); }
@@ -215,7 +215,7 @@ async function resendOTP() {
   try {
     const r = await fetch('/api/auth/resend-email-otp', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-API-Key': 'CHANGE_ME' },
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': 'CHANGE_ME' },  // ⚠️ CHANGE_ME — replace before deploying
       body: JSON.stringify({ token: emailOtpToken })
     });
     if (!r.ok) { const d = await r.json(); throw new Error(d.detail || 'Failed to resend'); }
@@ -254,7 +254,7 @@ function startResendTimer() {
 
 async function logout(){
   const token = localStorage.getItem('iam_token') || '';
-  try{await fetch('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME'},body:JSON.stringify({token})})}catch(e){}
+  try{await fetch('/api/auth/logout',{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':'CHANGE_ME'},body:JSON.stringify({token})})}catch(e){}  // ⚠️ CHANGE_ME — replace before deploying
   localStorage.clear();
   window.location.href='/login'
 }
