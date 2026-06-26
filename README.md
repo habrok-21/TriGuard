@@ -1,12 +1,12 @@
-# Zero Trust IAM Gateway
+# TriGuard — Zero Trust IAM Gateway
 
-A multi-layered authentication gateway built on the Zero Trust security model. Every request is verified, every session is tracked, and access is granted based on role, device posture, and authentication strength.
+Multi-layer authentication (password → TOTP → email OTP), device posture checking, LDAP/AD integration, VPN (WireGuard), reverse proxy, and an admin SIEM dashboard in one Docker Compose stack.
 
 ---
 
 ## Overview
 
-The Zero Trust IAM Gateway is a complete identity and access management system that sits in front of your internal applications and enforces strict security policies before allowing access. It combines a reverse proxy, authentication server, and policy engine into a single deployable unit powered by Docker.
+TriGuard is a complete identity and access management system that sits in front of your internal applications and enforces strict security policies before allowing access. It combines a reverse proxy, authentication server, and policy engine into a single deployable unit powered by Docker.
 
 | Component | Role |
 |-----------|------|
@@ -31,7 +31,7 @@ Traditional network security relies on a castle-and-moat model — once inside t
 
 ## Our Solution
 
-The Zero Trust IAM Gateway implements a **never trust, always verify** architecture:
+TriGuard - The Zero Trust IAM Gateway implements a **never trust, always verify** architecture :
 
 ### Three-Layer Authentication
 1. **Username & Password** — verified against LDAP or local database
@@ -178,7 +178,8 @@ Run this to find every location:
 make check-config
 ```
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for the full configuration checklist covering:
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the full configuration checklist covering :
+
 - `docker-compose.yml` — LDAP domain, admin password, API secret, SMTP credentials
 - `ldap/seed.ldif` — seed user passwords and emails
 - HTML files — hardcoded `X-API-Key` in login/employee/admin pages
